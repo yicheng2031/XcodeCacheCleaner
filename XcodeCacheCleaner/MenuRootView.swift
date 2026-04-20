@@ -10,9 +10,8 @@ import AppKit
 
 struct MenuRootView: View {
     @EnvironmentObject private var model: AppModel
-    @StateObject private var fileAccess = FileAccessStore.shared
-    @StateObject private var donationStore = DonationStore.shared
     @State private var isRuntimesExpanded: Bool = false
+    @State private var isScanErrorDetailsPresented: Bool = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -27,7 +26,6 @@ struct MenuRootView: View {
         .task {
             // 打开菜单时：立即展示快照（已在 model 里做了），然后触发一次后台刷新
             await model.refresh(reason: "menu-open")
-            await donationStore.loadProductsIfNeeded()
         }
     }
     
@@ -59,26 +57,49 @@ struct MenuRootView: View {
             }
             
             if let errors = model.snapshot?.categoryErrors, !errors.isEmpty {
-                Text("summary.partial_scan_failed")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.orange)
-                    .lineLimit(2)
+                let details: String = {
+                    // 在提示中列出失败分类与原因，便于用户定位（尤其是 Sandbox 下的 simctl/runtime 问题）
+                    let lines: [String] = errors
+                        .sorted(by: { $0.key < $1.key })
+                        .map { (id, msg) in
+                            let titleKey = model.preferences.categories.first(where: { $0.id == id })?.title ?? id
+                            return "\(L(titleKey)): \(msg)"
+                        }
+                    return lines.joined(separator: "\n")
+                }()
+                
+                // 仅靠 hover 的 tooltip 在 MenuBarExtra 下有时不明显（系统延迟不可控），这里同时支持“点击查看详情”。
+                Button {
+                    isScanErrorDetailsPresented.toggle()
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("summary.partial_scan_failed")
+                            .lineLimit(2)
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11))
+                .foregroundStyle(.orange)
+                .help(details)
+                .popover(isPresented: $isScanErrorDetailsPresented, arrowEdge: .bottom) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("summary.partial_scan_failed")
+                            .font(.system(size: 12, weight: .semibold))
+                        ScrollView {
+                            Text(details)
+                                .font(.system(size: 11))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled)
+                        }
+                        .frame(width: 340, height: 160)
+                    }
+                    .padding(12)
+                }
             }
 
-            if !fileAccess.hasLibraryAccess {
-                HStack(spacing: 10) {
-                    Text("permission.summary.hint")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                    Spacer()
-                    Button("permission.action.grant") {
-                        Task { await fileAccess.requestLibraryAccess() }
-                    }
-                    .controlSize(.small)
-                }
-                .padding(.top, 2)
-            }
+            // 纯 GitHub 开源版本：不走 MAS 沙盒授权流程
         }
     }
 
@@ -254,17 +275,12 @@ struct MenuRootView: View {
             HStack(spacing: 12) {
                 Menu("menu.donate") {
                     DonationMenuItemsView()
-                        .environmentObject(donationStore)
                 }
                 Menu("menu.about") {
                     Button("about.open_github") { AppLinks.openGitHub() }
                     Button("about.privacy") { AppLinks.openPrivacy() }
                     Divider()
-                    Button {
-                        Task { await fileAccess.requestLibraryAccess() }
-                    } label: {
-                        Text(LocalizedStringKey(fileAccess.hasLibraryAccess ? "permission.status.granted" : "permission.status.not_granted"))
-                    }
+                    Button("about.support") { AppLinks.openSupport() }
                 }
                 Spacer()
                 Button("action.quit") {
@@ -388,6 +404,15 @@ private extension MenuRootView {
                         Text("runtime.empty")
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
+                        
+                        // 如果 runtimes 扫描失败，把原因直接展示出来（不要依赖 hover）
+                        if let err = model.snapshot?.categoryErrors?["runtimes"] {
+                            Text(String(format: String(localized: "runtime.scan_failed.inline.format"), err))
+                                .font(.system(size: 11))
+                                .foregroundStyle(.orange)
+                                .lineLimit(4)
+                                .textSelection(.enabled)
+                        }
                     } else {
                         runtimesList
                     }

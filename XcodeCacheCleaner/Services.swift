@@ -24,11 +24,26 @@ enum ServiceError: LocalizedError {
 // MARK: - ProcessRunner
 
 final class ProcessRunner {
-    func run(_ program: String, _ arguments: [String]) async throws -> String {
+    /// 统一封装 simctl 调用：使用 xcrun 以获得最佳兼容性（匹配当前选中的 Developer Dir）。
+    func runSimctl(_ arguments: [String]) async throws -> String {
+        let developerDir = (try? await run("/usr/bin/xcode-select", ["-p"]))?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let env: [String: String] = {
+            guard let developerDir, !developerDir.isEmpty else { return [:] }
+            return ["DEVELOPER_DIR": developerDir]
+        }()
+        return try await run("/usr/bin/xcrun", ["simctl"] + arguments, environment: env)
+    }
+    
+    func run(_ program: String, _ arguments: [String], environment: [String: String]? = nil) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             process.executableURL = URL(fileURLWithPath: program)
             process.arguments = arguments
+            if let environment {
+                // 以当前进程环境为基底，避免丢失系统默认环境变量
+                process.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new }
+            }
             
             let outPipe = Pipe()
             let errPipe = Pipe()
@@ -78,8 +93,15 @@ final class ScannerService {
     func scan(preferences: Preferences) async throws -> ScanSnapshot {
         let disk = try diskInfo.readRootDisk()
 
-        // Runtime 可能因为系统/权限策略失败：允许失败但不影响其他结果。
-        let runtimes = (try? await scanRuntimes()) ?? [:]
+        // Runtime 可能因为系统/权限策略失败：允许失败但不影响其他结果，但要把错误提示出来。
+        var runtimeError: String?
+        let runtimes: [String: [RuntimeItem]]
+        do {
+            runtimes = try await scanRuntimes()
+        } catch {
+            runtimes = [:]
+            runtimeError = (error as NSError).localizedDescription
+        }
 
         var categoryErrors: [String: String] = [:]
         let categories = try await scanCategories(
@@ -87,6 +109,9 @@ final class ScannerService {
             runtimesByPlatform: runtimes,
             categoryErrors: &categoryErrors
         )
+        if let runtimeError {
+            categoryErrors["runtimes"] = runtimeError
+        }
 
         return ScanSnapshot(
             createdAt: Date(),
@@ -123,7 +148,7 @@ final class ScannerService {
         case let .deletePaths(paths):
             var total: Int64 = 0
             for p in paths {
-                total += try await duBytes(path: try resolvePathForSandbox(p))
+                total += try await duBytes(path: expandTilde(p))
             }
             return total
         case .command:
@@ -131,7 +156,7 @@ final class ScannerService {
             // 使用 scanPaths 作为统计口径；若没有 scanPaths，则返回 0。
             var total: Int64 = 0
             for p in (category.scanPaths ?? []) {
-                total += try await duBytes(path: try resolvePathForSandbox(p))
+                total += try await duBytes(path: expandTilde(p))
             }
             return total
         case .runtimes:
@@ -146,11 +171,6 @@ final class ScannerService {
     
     private func duBytes(path: String) async throws -> Int64 {
         guard FileManager.default.fileExists(atPath: path) else { return 0 }
-        // du 速度更快；在 Sandbox 下需要在 security-scope 生效期间执行。
-        let url = URL(fileURLWithPath: path)
-        let accessing = url.startAccessingSecurityScopedResource()
-        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-
         let output2 = try await runner.run("/usr/bin/du", ["-sk", path])
         // du -sk: "<kb>\t<path>"
         let first = output2.split(whereSeparator: { $0 == "\t" || $0 == " " }).first
@@ -161,50 +181,154 @@ final class ScannerService {
     }
     
     private func scanRuntimes() async throws -> [String: [RuntimeItem]] {
-        // 兼容性：优先 JSON
-        let output = try await runner.run("/usr/bin/xcrun", ["simctl", "runtime", "list", "-j"])
-        let data = Data(output.utf8)
-        let json = try JSONSerialization.jsonObject(with: data, options: [])
+        // simctl 在不同 Xcode/macOS 版本上命令与 JSON 结构可能不同，这里做多路兜底。
+        let candidates: [[String]] = [
+            ["runtime", "list", "-j"],          // 新一些的写法
+            ["list", "runtimes", "-j"],         // 常见写法（旧版也可能支持）
+            ["list", "-j", "runtimes"],         // 另一种参数顺序
+        ]
         
-        // 可能的结构：
-        // A) { "runtimes": { "<uuid>": { ... } } }
-        // B) { "<uuid>": { ... }, ... }
-        let map: [String: Any]
-        if let root = json as? [String: Any], let runtimes = root["runtimes"] as? [String: Any] {
-            map = runtimes
-        } else if let root = json as? [String: Any] {
-            map = root
-        } else {
-            return [:]
+        var output: String?
+        var lastError: Error?
+        for args in candidates {
+            do {
+                output = try await runner.runSimctl(args)
+                if let output, !output.isEmpty { break }
+            } catch {
+                lastError = error
+            }
+        }
+        
+        guard let output else { throw (lastError ?? ServiceError.commandFailed(command: "xcrun simctl ...", output: "")) }
+        
+        func inferPlatform(from identifier: String) -> String {
+            if identifier.contains(".iOS-") { return "com.apple.platform.iphonesimulator" }
+            if identifier.contains(".watchOS-") { return "com.apple.platform.watchsimulator" }
+            if identifier.contains(".tvOS-") { return "com.apple.platform.appletvsimulator" }
+            if identifier.contains(".xrOS-") || identifier.contains(".visionOS-") { return "com.apple.platform.xrsimulator" }
+            return "unknown"
         }
         
         var byPlatform: [String: [RuntimeItem]] = [:]
         
-        for (key, value) in map {
-            guard let dict = value as? [String: Any] else { continue }
-            let platform = (dict["platformIdentifier"] as? String) ?? "unknown"
-            let version = (dict["version"] as? String) ?? "unknown"
-            let build = dict["build"] as? String
-            let deletable = dict["deletable"] as? Bool
-            let sizeBytes = (dict["sizeBytes"] as? NSNumber)?.int64Value
-            let id = (dict["identifier"] as? String) ?? key
+        func parseTextRuntimes(_ text: String) {
+            // 典型行：iOS 18.4 (18.4 - 22E238) - com.apple.CoreSimulator.SimRuntime.iOS-18-4
+            for lineSub in text.split(separator: "\n") {
+                let line = lineSub.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard line.contains("SimRuntime"), line.contains(" - ") else { continue }
+                let parts = line.components(separatedBy: " - ")
+                guard parts.count >= 2 else { continue }
+                let left = parts[0]
+                let id = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
+                let platform = inferPlatform(from: id)
+                
+                // version：从左侧提取 “iOS 18.4”
+                let version = left
+                    .replacingOccurrences(of: "iOS", with: "")
+                    .replacingOccurrences(of: "watchOS", with: "")
+                    .replacingOccurrences(of: "tvOS", with: "")
+                    .replacingOccurrences(of: "xrOS", with: "")
+                    .replacingOccurrences(of: "visionOS", with: "")
+                    .components(separatedBy: " (").first?
+                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? "unknown"
+                
+                // build：括号内通常是 “18.4 - 22E238” 或 “18.3.1 - 22D8075”，取最后一段作为 build
+                var build: String?
+                if let start = left.firstIndex(of: "("), let end = left.firstIndex(of: ")"), start < end {
+                    let inside = String(left[left.index(after: start)..<end])
+                    if let last = inside.components(separatedBy: " - ").last?.trimmingCharacters(in: .whitespacesAndNewlines),
+                       !last.isEmpty {
+                        build = last
+                    } else {
+                        build = inside.trimmingCharacters(in: .whitespacesAndNewlines)
+                    }
+                }
+                
+                byPlatform[platform, default: []].append(
+                    RuntimeItem(id: id, platformIdentifier: platform, version: version, build: build, deletable: nil, sizeBytes: nil)
+                )
+            }
+        }
+        // 1) 先尝试 JSON（最准确）
+        do {
+            let data = Data(output.utf8)
+            let json = try JSONSerialization.jsonObject(with: data, options: [])
             
-            let item = RuntimeItem(
-                id: id,
-                platformIdentifier: platform,
-                version: version,
-                build: build,
-                deletable: deletable,
-                sizeBytes: sizeBytes
-            )
-            byPlatform[platform, default: []].append(item)
+            
+            if let root = json as? [String: Any] {
+                // 结构 1：{ "runtimes": { "<uuid>": { ... } } }
+                if let runtimesDict = root["runtimes"] as? [String: Any] {
+                    for (key, value) in runtimesDict {
+                        guard let dict = value as? [String: Any] else { continue }
+                        let id = (dict["identifier"] as? String) ?? key
+                        let platform = (dict["platformIdentifier"] as? String) ?? inferPlatform(from: id)
+                        let version = (dict["version"] as? String) ?? "unknown"
+                        let build = dict["build"] as? String
+                        let deletable = dict["deletable"] as? Bool
+                        let sizeBytes = (dict["sizeBytes"] as? NSNumber)?.int64Value
+                        byPlatform[platform, default: []].append(
+                            RuntimeItem(id: id, platformIdentifier: platform, version: version, build: build, deletable: deletable, sizeBytes: sizeBytes)
+                        )
+                    }
+                }
+                // 结构 2：{ "runtimes": [ { ... }, ... ] }
+                else if let runtimesArr = root["runtimes"] as? [[String: Any]] {
+                    for dict in runtimesArr {
+                        let id = (dict["identifier"] as? String)
+                            ?? (dict["bundleIdentifier"] as? String)
+                            ?? (dict["runtimeIdentifier"] as? String)
+                            ?? (dict["name"] as? String)
+                            ?? UUID().uuidString
+                        let platform = (dict["platformIdentifier"] as? String) ?? inferPlatform(from: id)
+                        let version = (dict["version"] as? String)
+                            ?? (dict["runtimeVersion"] as? String)
+                            ?? "unknown"
+                        let build = dict["build"] as? String
+                        let deletable = dict["deletable"] as? Bool
+                        let sizeBytes = (dict["sizeBytes"] as? NSNumber)?.int64Value
+                        byPlatform[platform, default: []].append(
+                            RuntimeItem(id: id, platformIdentifier: platform, version: version, build: build, deletable: deletable, sizeBytes: sizeBytes)
+                        )
+                    }
+                } else {
+                    // 结构 3：兜底：把 root 当作 map
+                    for (key, value) in root {
+                        guard let dict = value as? [String: Any] else { continue }
+                        let id = (dict["identifier"] as? String) ?? key
+                        let platform = (dict["platformIdentifier"] as? String) ?? inferPlatform(from: id)
+                        let version = (dict["version"] as? String) ?? "unknown"
+                        let build = dict["build"] as? String
+                        let deletable = dict["deletable"] as? Bool
+                        let sizeBytes = (dict["sizeBytes"] as? NSNumber)?.int64Value
+                        byPlatform[platform, default: []].append(
+                            RuntimeItem(id: id, platformIdentifier: platform, version: version, build: build, deletable: deletable, sizeBytes: sizeBytes)
+                        )
+                    }
+                }
+            }
+        } catch {
+            // 2) JSON 失败就退回到文本解析（覆盖更老/更怪的 simctl 输出）
+            let text = (try? await runner.runSimctl(["list", "runtimes"])) ?? ""
+            parseTextRuntimes(text)
+        }
+        
+        // 3) JSON 解析可能“成功但结构不含 runtimes”（或字段名变化），再做一次文本兜底。
+        if byPlatform.isEmpty {
+            let text = (try? await runner.runSimctl(["list", "runtimes"])) ?? ""
+            parseTextRuntimes(text)
+        }
+        
+        // 4) 如果解析后仍为空，说明命令可能输出了我们未覆盖的结构或“空但成功”。
+        //    这时直接抛错，把原始输出带到 UI（方便开源用户定位）。
+        if byPlatform.isEmpty {
+            let snippet = output.prefix(600)
+            throw ServiceError.invalidOutput(command: "simctl runtimes", output: String(snippet))
         }
         
         // 排序：版本降序
         for (platform, items) in byPlatform {
             byPlatform[platform] = items.sorted(by: { Version($0.version) > Version($1.version) })
         }
-        
         return byPlatform
     }
 }
@@ -224,9 +348,9 @@ final class CleanerService {
         if !plan.runtimesToDelete.isEmpty {
             for rt in plan.runtimesToDelete {
                 // 你要求“简单”：直接删，不做解锁/二次确认
-                _ = try await runner.run("/usr/bin/xcrun", ["simctl", "runtime", "delete", rt.deleteArgument])
+                _ = try await runner.runSimctl(["runtime", "delete", rt.deleteArgument])
             }
-            _ = try await runner.run("/usr/bin/xcrun", ["simctl", "delete", "unavailable"])
+            _ = try await runner.runSimctl(["delete", "unavailable"])
         }
     }
     
@@ -234,11 +358,8 @@ final class CleanerService {
         switch category.action {
         case let .deletePaths(paths):
             for p in paths {
-                let path = try resolvePathForSandbox(p)
+                let path = expandTilde(p)
                 guard FileManager.default.fileExists(atPath: path) else { continue }
-                let url = URL(fileURLWithPath: path)
-                let accessing = url.startAccessingSecurityScopedResource()
-                defer { if accessing { url.stopAccessingSecurityScopedResource() } }
                 try FileManager.default.removeItem(atPath: path)
             }
         case let .command(program, arguments):
@@ -255,19 +376,4 @@ final class CleanerService {
 func expandTilde(_ path: String) -> String {
     guard path.hasPrefix("~") else { return path }
     return (path as NSString).expandingTildeInPath
-}
-
-/// 在 Sandbox/MAS 场景下，访问 ~/Library 下的路径需要用户授权。
-/// - 已授权：将路径重定向到用户选择的 Library bookmark 下
-/// - 未授权：抛出错误，供 UI 引导用户授权
-func resolvePathForSandbox(_ tildePath: String) throws -> String {
-    let expanded = expandTilde(tildePath)
-    // 只对 ~/Library/* 做处理；其余路径按原样返回
-    let home = FileManager.default.homeDirectoryForCurrentUser.path
-    let libraryPrefix = home.hasSuffix("/") ? "\(home)Library/" : "\(home)/Library/"
-    guard expanded.hasPrefix(libraryPrefix) else { return expanded }
-
-    // 关键：通过 security-scoped bookmark 获取访问
-    let url = try FileAccessStore.shared.resolveHomeLibraryPath(tildePath)
-    return url.path
 }

@@ -1,16 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@  •  %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@  •  %2$@"
-          }
-        }
-      }
-    },
     "about.open_github" : {
       "localizations" : {
         "en" : {
@@ -39,6 +29,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "隐私说明"
+          }
+        }
+      }
+    },
+    "about.support" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支持与反馈"
           }
         }
       }
@@ -497,6 +503,7 @@
       }
     },
     "donation.load_products" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -513,6 +520,7 @@
       }
     },
     "donation.loading" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -528,7 +536,56 @@
         }
       }
     },
+    "donation.note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support is voluntary (no extra features unlocked)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "支持为自愿行为（不解锁任何额外功能）。"
+          }
+        }
+      }
+    },
+    "donation.open_feishu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open CN support page (Feishu)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开国内支持页面（飞书）"
+          }
+        }
+      }
+    },
+    "donation.open_sponsors" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open GitHub Sponsors"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 GitHub Sponsors"
+          }
+        }
+      }
+    },
     "donation.purchase.pending" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -545,6 +602,7 @@
       }
     },
     "donation.purchase.success" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -561,6 +619,7 @@
       }
     },
     "donation.purchase.unknown" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -577,6 +636,7 @@
       }
     },
     "donation.tip_note" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -625,6 +685,7 @@
       }
     },
     "error.permission.bookmark_resolve_failed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -641,6 +702,7 @@
       }
     },
     "error.permission.library_not_granted" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -721,6 +783,7 @@
       }
     },
     "permission.action.grant" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -737,6 +800,7 @@
       }
     },
     "permission.panel.message" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -753,6 +817,7 @@
       }
     },
     "permission.panel.prompt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -769,6 +834,7 @@
       }
     },
     "permission.panel.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -819,6 +885,7 @@
       }
     },
     "permission.summary.hint" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -878,6 +945,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未读取到 Runtime（可能未安装或命令不可用）。"
+          }
+        }
+      }
+    },
+    "runtime.scan_failed.inline.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtime scan failed: %1$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtime 扫描失败：%1$@"
           }
         }
       }

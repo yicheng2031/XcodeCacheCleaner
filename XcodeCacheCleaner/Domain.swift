@@ -191,10 +191,19 @@ struct RuntimeItem: Codable, Equatable, Identifiable {
     var sizeBytes: Int64?
     
     /// 用于删除的参数（优先 build，其次 id）
-    var deleteArgument: String { build ?? id }
+    var deleteArgument: String {
+        // 兼容不同 simctl 版本：
+        // - 有些版本的 `simctl runtime delete` 需要 runtime identifier（形如 com.apple.CoreSimulator.SimRuntime.iOS-17-5）
+        // - 有些版本可用 build
+        if id.contains("com.apple.CoreSimulator.SimRuntime") { return id }
+        return build ?? id
+    }
     
     /// 选择态 key：优先 build（更接近 simctl runtime delete 的输入）
-    var deletionKey: String { build ?? id }
+    var deletionKey: String {
+        if id.contains("com.apple.CoreSimulator.SimRuntime") { return id }
+        return build ?? id
+    }
 }
 
 // MARK: - Version compare
