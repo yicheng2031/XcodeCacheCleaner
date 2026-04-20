@@ -1,0 +1,1079 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@  •  %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@  •  %2$@"
+          }
+        }
+      }
+    },
+    "about.open_github" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open GitHub"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 GitHub"
+          }
+        }
+      }
+    },
+    "about.privacy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐私说明"
+          }
+        }
+      }
+    },
+    "action.clean_now" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clean Now"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "立即清理"
+          }
+        }
+      }
+    },
+    "action.quit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出"
+          }
+        }
+      }
+    },
+    "action.rescan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rescan"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新检测"
+          }
+        }
+      }
+    },
+    "app.name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Cache Cleaner"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Cache Cleaner"
+          }
+        }
+      }
+    },
+    "categories.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Cache Categories"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Cache 分类"
+          }
+        }
+      }
+    },
+    "category.archives.desc" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archives (cannot export/symbolicate old builds after deletion)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "归档（删后无法导出/符号化旧版本）"
+          }
+        }
+      }
+    },
+    "category.archives.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archives"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archives"
+          }
+        }
+      }
+    },
+    "category.derivedData.desc" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build products/indexes (will be rebuilt)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编译产物/索引（删后会重建）"
+          }
+        }
+      }
+    },
+    "category.derivedData.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DerivedData"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DerivedData"
+          }
+        }
+      }
+    },
+    "category.deviceSupport.desc" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device symbolication support (will be rebuilt on connect)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "真机符号化支持（连接会重建）"
+          }
+        }
+      }
+    },
+    "category.deviceSupport.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS DeviceSupport"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS DeviceSupport"
+          }
+        }
+      }
+    },
+    "category.runtimes.desc" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulator runtimes (can be re-downloaded)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模拟器运行时（删后可重新下载）"
+          }
+        }
+      }
+    },
+    "category.runtimes.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtimes (iOS/watchOS/...)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtimes（iOS/watchOS/...）"
+          }
+        }
+      }
+    },
+    "category.scan_failed_help.format" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan failed: %@\n\n%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "扫描失败：%@\n\n%@"
+          }
+        }
+      }
+    },
+    "category.simulatorDevices.desc" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erase all simulator devices data (does not remove runtimes)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清空模拟器 App/数据（不影响 Runtime）"
+          }
+        }
+      }
+    },
+    "category.simulatorDevices.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulator Devices (Erase Data)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulator Devices（清空数据）"
+          }
+        }
+      }
+    },
+    "category.simulatorLogsCaches.desc" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulator logs/caches (low impact)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模拟器日志/缓存（影响较小）"
+          }
+        }
+      }
+    },
+    "category.simulatorLogsCaches.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulator Logs/Caches"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulator Logs/Caches"
+          }
+        }
+      }
+    },
+    "category.swiftpm.desc" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftPM caches (may re-fetch/rebuild)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "依赖缓存（可能重新拉取/重建）"
+          }
+        }
+      }
+    },
+    "category.swiftpm.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftPM Caches"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftPM 缓存"
+          }
+        }
+      }
+    },
+    "category.swiftuiPreviews.desc" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftUI preview data (recommended to clean via command)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftUI 预览数据（建议用命令清理）"
+          }
+        }
+      }
+    },
+    "category.swiftuiPreviews.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftUI Previews"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SwiftUI Previews"
+          }
+        }
+      }
+    },
+    "category.xcodeCaches.desc" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode caches (may trigger small rebuild/download)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode 缓存（可能触发少量重建/下载）"
+          }
+        }
+      }
+    },
+    "category.xcodeCaches.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Caches"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Caches"
+          }
+        }
+      }
+    },
+    "category.xcodeLogs.desc" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode history logs (will lose records)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode 历史日志（会丢失记录）"
+          }
+        }
+      }
+    },
+    "category.xcodeLogs.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Logs"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Logs"
+          }
+        }
+      }
+    },
+    "contentview.migrated" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moved to menu bar app (MenuBarExtra)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已迁移到菜单栏应用（MenuBarExtra）。"
+          }
+        }
+      }
+    },
+    "donation.load_products" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load donation options"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载捐赠选项"
+          }
+        }
+      }
+    },
+    "donation.loading" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加载中…"
+          }
+        }
+      }
+    },
+    "donation.purchase.pending" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase pending…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "购买处理中…"
+          }
+        }
+      }
+    },
+    "donation.purchase.success" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thanks for your support!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "感谢支持！"
+          }
+        }
+      }
+    },
+    "donation.purchase.unknown" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown purchase status."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未知的购买状态。"
+          }
+        }
+      }
+    },
+    "donation.tip_note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tip Jar (no extra features)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "捐赠不会解锁任何功能"
+          }
+        }
+      }
+    },
+    "error.command_failed.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Command failed: %@\n%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "命令执行失败：%@\n%@"
+          }
+        }
+      }
+    },
+    "error.invalid_output.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cannot parse output: %@\n%@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "命令输出无法解析：%@\n%@"
+          }
+        }
+      }
+    },
+    "error.permission.bookmark_resolve_failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to resolve saved permission. Please grant access again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "权限记录解析失败，请重新授权。"
+          }
+        }
+      }
+    },
+    "error.permission.library_not_granted" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library access not granted. Click “Grant Access…” and select your ~/Library folder."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未授权访问 Library。请点击“授权访问…”并选择你的 ~/Library 文件夹。"
+          }
+        }
+      }
+    },
+    "last_scan.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last scan: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上次扫描：%@"
+          }
+        }
+      }
+    },
+    "last_scan.never" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未扫描"
+          }
+        }
+      }
+    },
+    "menu.about" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于"
+          }
+        }
+      }
+    },
+    "menu.donate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Donate"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "捐赠"
+          }
+        }
+      }
+    },
+    "permission.action.grant" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grant Access…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "授权访问…"
+          }
+        }
+      }
+    },
+    "permission.panel.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please select your ~/Library folder (recommended) to enable scanning and cleaning in sandbox mode."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请选中你的 ~/Library 文件夹（推荐），以便在沙盒模式下进行扫描与清理。"
+          }
+        }
+      }
+    },
+    "permission.panel.prompt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择"
+          }
+        }
+      }
+    },
+    "permission.panel.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grant Folder Access"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "授权文件夹访问"
+          }
+        }
+      }
+    },
+    "permission.status.granted" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library Access: Granted"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library 权限：已授权"
+          }
+        }
+      }
+    },
+    "permission.status.not_granted" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library Access: Not Granted"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Library 权限：未授权"
+          }
+        }
+      }
+    },
+    "permission.summary.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sandbox mode needs access to ~/Library to scan and clean."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沙盒模式需要授权访问 ~/Library 才能扫描与清理。"
+          }
+        }
+      }
+    },
+    "runtime.copy_fallback" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Terminal Commands (Fallback)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "复制终端命令（兜底）"
+          }
+        }
+      }
+    },
+    "runtime.delete_failed.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtime deletion failed (copy commands for Terminal): %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Runtime 删除失败（可复制命令在终端执行）：%@"
+          }
+        }
+      }
+    },
+    "runtime.empty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No runtimes found (not installed or command unavailable)."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未读取到 Runtime（可能未安装或命令不可用）。"
+          }
+        }
+      }
+    },
+    "schedule.every1h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Clean Every 1 Hour"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每 1 小时自动清理"
+          }
+        }
+      }
+    },
+    "schedule.every4h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Clean Every 4 Hours"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每 4 小时自动清理"
+          }
+        }
+      }
+    },
+    "schedule.every12h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Clean Every 12 Hours"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每 12 小时自动清理"
+          }
+        }
+      }
+    },
+    "schedule.every24h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Clean Every 24 Hours"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每 24 小时自动清理"
+          }
+        }
+      }
+    },
+    "schedule.off" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Clean Off"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭定时清理"
+          }
+        }
+      }
+    },
+    "status.cleaning" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaning…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清理中…"
+          }
+        }
+      }
+    },
+    "status.scanning" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scanning…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "检测中…"
+          }
+        }
+      }
+    },
+    "statusbar.label.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache %@GB | Disk %@%%"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缓存 %@GB | 磁盘 %@%%"
+          }
+        }
+      }
+    },
+    "summary.disk.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disk: %@ available | %@%%"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "磁盘：%@ 可用 | %@%%"
+          }
+        }
+      }
+    },
+    "summary.partial_scan_failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some categories failed to scan (usually permissions/path). Hover the description for details."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分分类扫描失败（多为权限/路径问题），将鼠标悬停到分类描述可查看说明。"
+          }
+        }
+      }
+    },
+    "summary.xcode_cache.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode Cache %@ | %@%%"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xcode 缓存 %@ | %@%%"
+          }
+        }
+      }
+    },
+    "toast.cleaned.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ cleaned"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 已清理完成"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
