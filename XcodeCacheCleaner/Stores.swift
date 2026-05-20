@@ -17,12 +17,31 @@ final class PreferencesStore {
             let data = defaults.data(forKey: key),
             let value = try? JSONDecoder().decode(Preferences.self, from: data)
         else { return .defaultValue }
-        return value
+        return migrate(value)
     }
     
     func save(_ value: Preferences) {
         guard let data = try? JSONEncoder().encode(value) else { return }
         defaults.set(data, forKey: key)
+    }
+
+    private func migrate(_ value: Preferences) -> Preferences {
+        var migratedCategories = value.categories
+        for defaultCategory in CacheCategoryPreference.defaultCategories {
+            if let index = migratedCategories.firstIndex(where: { $0.id == defaultCategory.id }) {
+                let included = defaultCategory.id == "swiftuiPreviews"
+                    ? defaultCategory.includedInOneTapClean
+                    : migratedCategories[index].includedInOneTapClean
+                migratedCategories[index] = defaultCategory
+                migratedCategories[index].includedInOneTapClean = included
+            } else {
+                migratedCategories.append(defaultCategory)
+            }
+        }
+
+        var migrated = value
+        migrated.categories = migratedCategories
+        return migrated
     }
 }
 

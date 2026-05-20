@@ -69,7 +69,7 @@ struct CacheCategoryPreference: Codable, Equatable, Identifiable {
             description: "category.derivedData.desc",
             scanPaths: ["~/Library/Developer/Xcode/DerivedData"],
             includedInOneTapClean: true,
-            action: .deletePaths(["~/Library/Developer/Xcode/DerivedData"])
+            action: .itemList
         ),
         .init(
             id: "xcodeCaches",
@@ -83,17 +83,22 @@ struct CacheCategoryPreference: Codable, Equatable, Identifiable {
             id: "simulatorLogsCaches",
             title: "category.simulatorLogsCaches.title",
             description: "category.simulatorLogsCaches.desc",
-            scanPaths: ["~/Library/Logs/CoreSimulator", "~/Library/Caches/com.apple.CoreSimulator"],
+            scanPaths: [
+                "~/Library/Logs/CoreSimulator",
+                "~/Library/Caches/com.apple.CoreSimulator",
+                "~/Library/Developer/CoreSimulator/Temp",
+                "~/Library/Developer/CoreSimulator/Caches",
+            ],
             includedInOneTapClean: true,
-            action: .deletePaths(["~/Library/Logs/CoreSimulator", "~/Library/Caches/com.apple.CoreSimulator"])
+            action: .itemList
         ),
         .init(
             id: "swiftuiPreviews",
             title: "category.swiftuiPreviews.title",
             description: "category.swiftuiPreviews.desc",
             scanPaths: ["~/Library/Developer/Xcode/UserData/Previews"],
-            includedInOneTapClean: false,
-            action: .command(program: "/usr/bin/xcrun", arguments: ["simctl", "--set", "previews", "delete", "all"])
+            includedInOneTapClean: true,
+            action: .itemList
         ),
         .init(
             id: "simulatorDevices",
@@ -104,6 +109,14 @@ struct CacheCategoryPreference: Codable, Equatable, Identifiable {
             action: .command(program: "/usr/bin/xcrun", arguments: ["simctl", "erase", "all"])
         ),
         .init(
+            id: "unavailableSimulators",
+            title: "category.unavailableSimulators.title",
+            description: "category.unavailableSimulators.desc",
+            scanPaths: nil,
+            includedInOneTapClean: true,
+            action: .unavailableSimulators
+        ),
+        .init(
             id: "deviceSupport",
             title: "category.deviceSupport.title",
             description: "category.deviceSupport.desc",
@@ -112,12 +125,28 @@ struct CacheCategoryPreference: Codable, Equatable, Identifiable {
             action: .deletePaths(["~/Library/Developer/Xcode/iOS DeviceSupport"])
         ),
         .init(
+            id: "deviceLogs",
+            title: "category.deviceLogs.title",
+            description: "category.deviceLogs.desc",
+            scanPaths: ["~/Library/Developer/Xcode/DeviceLogs"],
+            includedInOneTapClean: false,
+            action: .itemList
+        ),
+        .init(
+            id: "xcodeProducts",
+            title: "category.xcodeProducts.title",
+            description: "category.xcodeProducts.desc",
+            scanPaths: ["~/Library/Developer/Xcode/Products"],
+            includedInOneTapClean: false,
+            action: .itemList
+        ),
+        .init(
             id: "archives",
             title: "category.archives.title",
             description: "category.archives.desc",
             scanPaths: ["~/Library/Developer/Xcode/Archives"],
             includedInOneTapClean: false,
-            action: .deletePaths(["~/Library/Developer/Xcode/Archives"])
+            action: .archives
         ),
         .init(
             id: "xcodeLogs",
@@ -131,9 +160,14 @@ struct CacheCategoryPreference: Codable, Equatable, Identifiable {
             id: "swiftpm",
             title: "category.swiftpm.title",
             description: "category.swiftpm.desc",
-            scanPaths: ["~/Library/Caches/org.swift.swiftpm", "~/Library/Developer/Xcode/SourcePackages"],
+            scanPaths: [
+                "~/Library/Caches/org.swift.swiftpm",
+                "~/Library/Caches/swift-package",
+                "~/Library/org.swift.swiftpm",
+                "~/Library/Developer/Xcode/SourcePackages",
+            ],
             includedInOneTapClean: false,
-            action: .deletePaths(["~/Library/Caches/org.swift.swiftpm", "~/Library/Developer/Xcode/SourcePackages"])
+            action: .itemList
         ),
         .init(
             id: "runtimes",
@@ -150,6 +184,9 @@ enum CleanActionDefinition: Codable, Equatable {
     case deletePaths([String])
     case command(program: String, arguments: [String])
     case runtimes
+    case archives
+    case itemList
+    case unavailableSimulators
 }
 
 // MARK: - Snapshot
@@ -159,11 +196,22 @@ struct ScanSnapshot: Codable, Equatable {
     var disk: DiskInfo
     var categories: [CategorySize]
     var runtimesByPlatform: [String: [RuntimeItem]]
+    var archiveItems: [ArchiveItem]?
+    var itemListsByCategory: [String: [CleanableItem]]?
+    var unavailableSimulators: [SimulatorDeviceItem]?
     /// 扫描过程中的非致命错误（例如权限/路径不存在）。key = 分类 id
     var categoryErrors: [String: String]?
-    
+
     var xcodeTotalBytes: Int64 { categories.reduce(0) { $0 + $1.sizeBytes } }
     var allRuntimes: [RuntimeItem] { runtimesByPlatform.values.flatMap { $0 } }
+    var allArchives: [ArchiveItem] { archiveItems ?? [] }
+    var allCleanableItems: [CleanableItem] {
+        itemListsByCategory?.values.flatMap { $0 } ?? []
+    }
+
+    func cleanableItems(for categoryID: String) -> [CleanableItem] {
+        itemListsByCategory?[categoryID] ?? []
+    }
 }
 
 struct DiskInfo: Codable, Equatable {
@@ -190,20 +238,57 @@ struct RuntimeItem: Codable, Equatable, Identifiable {
     var deletable: Bool?
     var sizeBytes: Int64?
     
-    /// 用于删除的参数（优先 build，其次 id）
+    /// 用于删除的参数。
     var deleteArgument: String {
-        // 兼容不同 simctl 版本：
-        // - 有些版本的 `simctl runtime delete` 需要 runtime identifier（形如 com.apple.CoreSimulator.SimRuntime.iOS-17-5）
-        // - 有些版本可用 build
-        if id.contains("com.apple.CoreSimulator.SimRuntime") { return id }
-        return build ?? id
+        // `simctl runtime delete` 接收 runtime identifier。新 Xcode 的
+        // `simctl runtime list -j` 会给 UUID；旧输出可能是 SimRuntime bundle id。
+        id
     }
-    
-    /// 选择态 key：优先 build（更接近 simctl runtime delete 的输入）
+
+    /// 选择态 key：和删除参数保持一致，避免 build 相同导致错删/删不掉。
     var deletionKey: String {
-        if id.contains("com.apple.CoreSimulator.SimRuntime") { return id }
-        return build ?? id
+        id
     }
+}
+
+// MARK: - Archives
+
+struct ArchiveItem: Codable, Equatable, Identifiable {
+    var id: String
+    var path: String
+    var name: String
+    var createdAt: Date?
+    var sizeBytes: Int64
+
+    var deletionKey: String { path }
+}
+
+// MARK: - Cleanable file-system items
+
+struct CleanableItem: Codable, Equatable, Identifiable {
+    var id: String
+    var categoryID: String
+    var path: String
+    var name: String
+    var detail: String?
+    var createdAt: Date?
+    var sizeBytes: Int64
+
+    var deletionKey: String { "\(categoryID)|\(path)" }
+}
+
+// MARK: - Simulator devices
+
+struct SimulatorDeviceItem: Codable, Equatable, Identifiable {
+    var id: String
+    var name: String
+    var runtimeIdentifier: String
+    var state: String?
+    var availabilityError: String?
+    var dataPath: String?
+    var sizeBytes: Int64?
+
+    var deletionKey: String { id }
 }
 
 // MARK: - Version compare
@@ -231,4 +316,7 @@ struct Version: Comparable {
 struct CleanerPlan {
     var categories: [CacheCategoryPreference]
     var runtimesToDelete: [RuntimeItem]
+    var archivesToDelete: [ArchiveItem]
+    var cleanableItemsToDelete: [CleanableItem]
+    var simulatorDevicesToDelete: [SimulatorDeviceItem]
 }

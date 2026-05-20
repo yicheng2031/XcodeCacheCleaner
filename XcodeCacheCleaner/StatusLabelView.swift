@@ -12,7 +12,7 @@ struct StatusLabelView: View {
     @EnvironmentObject private var model: AppModel
     
     var body: some View {
-        let cacheGB = model.snapshot.map { String(format: "%.1f", Double($0.xcodeTotalBytes) / 1_000_000_000.0) } ?? "—"
+        let cacheGB = model.snapshot.map { SizeFormatting.gigabytes($0.xcodeTotalBytes) } ?? "—"
         let diskPercent = model.snapshot.map { String(format: "%.0f", $0.disk.usedPercent) } ?? "—"
         let icon = makeStatusIcon(size: 16)
         let label = String(format: String(localized: "statusbar.label.format"), cacheGB, diskPercent)

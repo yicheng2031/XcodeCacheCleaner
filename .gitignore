@@ -12,6 +12,14 @@ xcuserdata/
 .swiftpm/
 Package.resolved
 
+# Codex/local automation
+.codex/
+
+# Release artifacts
+dist/
+*.zip
+*.dmg
+
 # AppCode
 .idea/
 

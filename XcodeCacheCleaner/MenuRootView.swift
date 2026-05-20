@@ -8,10 +8,31 @@
 import SwiftUI
 import AppKit
 
+private let menuWidth: CGFloat = 390
+private let categoryListHeight: CGFloat = 535
+private let categoryChevronColumnWidth: CGFloat = 12
+private let categorySizeColumnMinWidth: CGFloat = 34
+private let categoryHeaderTrailingSpacing: CGFloat = 2
+private let categoryHorizontalPadding: CGFloat = 12
+private let categoryRowSpacing: CGFloat = 8
+
 struct MenuRootView: View {
     @EnvironmentObject private var model: AppModel
     @State private var isRuntimesExpanded: Bool = false
+    @State private var isArchivesExpanded: Bool = false
+    @State private var expandedItemListCategories: Set<String> = []
+    @State private var isUnavailableSimulatorsExpanded: Bool = false
     @State private var isScanErrorDetailsPresented: Bool = false
+
+    private var categorySizeColumnWidth: CGFloat {
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+        let attributes: [NSAttributedString.Key: Any] = [.font: font]
+        let widths = model.preferences.categories.map { cat in
+            let bytes = model.snapshot?.categories.first(where: { $0.id == cat.id })?.sizeBytes ?? 0
+            return (SizeFormatting.short(bytes) as NSString).size(withAttributes: attributes).width
+        }
+        return ceil(max(categorySizeColumnMinWidth, widths.max() ?? 0))
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -22,7 +43,7 @@ struct MenuRootView: View {
             footer
         }
         .padding(12)
-        .frame(width: 360)
+        .frame(width: menuWidth)
         .task {
             // 打开菜单时：立即展示快照（已在 model 里做了），然后触发一次后台刷新
             await model.refresh(reason: "menu-open")
@@ -31,11 +52,11 @@ struct MenuRootView: View {
     
     private var summary: some View {
         VStack(alignment: .leading, spacing: 6) {
-            let xcodeSize = model.snapshot.map { formatSize($0.xcodeTotalBytes) } ?? "—"
+            let xcodeSize = model.snapshot.map { SizeFormatting.short($0.xcodeTotalBytes) } ?? "—"
             let xcodePercentOfDisk = model.snapshot.map {
                 $0.disk.totalBytes == 0 ? "—" : String(format: "%.1f", (Double($0.xcodeTotalBytes) / Double($0.disk.totalBytes)) * 100.0)
             } ?? "—"
-            let diskAvail = model.snapshot.map { formatSize($0.disk.availableBytes) } ?? "—"
+            let diskAvail = model.snapshot.map { SizeFormatting.short($0.disk.availableBytes) } ?? "—"
             let diskPercent = model.snapshot.map { String(format: "%.0f", $0.disk.usedPercent) } ?? "—"
             
             // 顶部信息（你最新要求）
@@ -45,9 +66,6 @@ struct MenuRootView: View {
                 Text(String(format: String(localized: "summary.disk.format"), diskAvail, diskPercent))
             }
             .font(.system(size: 12))
-            
-            // 状态行：检测/清理 loading 与“清理完成”提示共用同一位置，左右居中
-            statusLine
             
             if let err = model.lastErrorMessage {
                 Text(err)
@@ -113,7 +131,6 @@ struct MenuRootView: View {
                 }
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center)
             } else if model.isScanning {
                 HStack(spacing: 8) {
                     ProgressView()
@@ -122,13 +139,39 @@ struct MenuRootView: View {
                 }
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center)
             } else if let toast = model.cleanToastMessage {
                 Text(toast)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.green)
-                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                Text(lastScanText)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
             }
+        }
+        .frame(maxWidth: .infinity, minHeight: 18, alignment: .center)
+    }
+
+    private var lastScanText: String {
+        let value = model.snapshot?.createdAt.formatted(date: .abbreviated, time: .shortened)
+            ?? String(localized: "last_scan.never")
+        let scanText = String(format: String(localized: "last_scan.format"), value)
+        guard let scheduleText = autoCleanStatusText else { return scanText }
+        return String(format: String(localized: "auto_clean.status.format"), scanText, scheduleText)
+    }
+
+    private var autoCleanStatusText: String? {
+        switch model.preferences.autoCleanSchedule {
+        case .off:
+            return nil
+        case .every1h:
+            return String(localized: "auto_clean.status.every1h")
+        case .every4h:
+            return String(localized: "auto_clean.status.every4h")
+        case .every12h:
+            return String(localized: "auto_clean.status.every12h")
+        case .every24h:
+            return String(localized: "auto_clean.status.every24h")
         }
     }
     
@@ -136,29 +179,40 @@ struct MenuRootView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("categories.header")
                 .font(.system(size: 12, weight: .semibold))
-            
-            ForEach(Array(model.preferences.categories.enumerated()), id: \.element.id) { idx, cat in
-                if cat.id == "runtimes" {
-                    runtimesCategoryRow(prefIndex: idx, cat: cat)
-                } else {
-                    standardCategoryRow(prefIndex: idx, cat: cat)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    categoryRows
                 }
+                .padding(.horizontal, categoryHorizontalPadding)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            
-            // 你要求：上次扫描放在 Divider 上方，居中显示
-            Text({
-                let value = model.snapshot?.createdAt.formatted(date: .abbreviated, time: .shortened)
-                    ?? String(localized: "last_scan.never")
-                return String(format: String(localized: "last_scan.format"), value)
-            }())
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .center)
+            .frame(height: categoryListHeight)
+
+            // 状态行固定在操作区上方，避免扫描/清理状态切换时菜单整体跳动。
+            statusLine
                 .padding(.top, 10)
             
             Divider()
             
             bottomActions
+        }
+    }
+
+    @ViewBuilder
+    private var categoryRows: some View {
+        ForEach(Array(model.preferences.categories.enumerated()), id: \.element.id) { idx, cat in
+            if cat.id == "runtimes" {
+                runtimesCategoryRow(prefIndex: idx, cat: cat)
+            } else if cat.id == "archives" {
+                archivesCategoryRow(prefIndex: idx, cat: cat)
+            } else if cat.action == .itemList {
+                itemListCategoryRow(prefIndex: idx, cat: cat)
+            } else if cat.action == .unavailableSimulators {
+                unavailableSimulatorsCategoryRow(prefIndex: idx, cat: cat)
+            } else {
+                standardCategoryRow(prefIndex: idx, cat: cat)
+            }
         }
     }
 
@@ -196,27 +250,20 @@ struct MenuRootView: View {
 
     @ViewBuilder
     private var scheduleMenuItems: some View {
-        scheduleItem(AutoCleanSchedule.off.title, selected: model.preferences.autoCleanSchedule == .off) { setSchedule(.off) }
-        Divider()
-        scheduleItem(AutoCleanSchedule.every1h.title, selected: model.preferences.autoCleanSchedule == .every1h) { setSchedule(.every1h) }
-        scheduleItem(AutoCleanSchedule.every4h.title, selected: model.preferences.autoCleanSchedule == .every4h) { setSchedule(.every4h) }
-        scheduleItem(AutoCleanSchedule.every12h.title, selected: model.preferences.autoCleanSchedule == .every12h) { setSchedule(.every12h) }
-        scheduleItem(AutoCleanSchedule.every24h.title, selected: model.preferences.autoCleanSchedule == .every24h) { setSchedule(.every24h) }
-    }
-
-    private func scheduleItem(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                if selected {
-                    Image(systemName: "checkmark")
-                        .frame(width: 14, alignment: .center)
-                } else {
-                    Color.clear
-                        .frame(width: 14, height: 14)
-                }
-                Text(title)
+        Picker(
+            "schedule.picker.title",
+            selection: Binding(
+                get: { model.preferences.autoCleanSchedule },
+                set: { setSchedule($0) }
+            )
+        ) {
+            ForEach(AutoCleanSchedule.allCases) { schedule in
+                Text(schedule.title)
+                    .tag(schedule)
             }
         }
+        .pickerStyle(.inline)
+        .labelsHidden()
     }
 
     private func setSchedule(_ schedule: AutoCleanSchedule) {
@@ -242,11 +289,12 @@ struct MenuRootView: View {
                                 Text(rt.version)
                             }
                             .font(.system(size: 12))
+                            .disabled(rt.deletable == false)
                             
                             Spacer()
                             
                             if let size = rt.sizeBytes {
-                                Text(formatSize(size))
+                                Text(SizeFormatting.short(size))
                                     .font(.system(size: 12))
                                     .foregroundStyle(.secondary)
                             }
@@ -259,33 +307,31 @@ struct MenuRootView: View {
     }
     
     private var footer: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // 按你的要求：名称居中 + 前面加新图标（同一行）
-            VStack(spacing: 6) {
-                Image("Logo")
-                    .resizable()
-                    .interpolation(.high)
-                    .frame(width: 136, height: 136)
+        HStack(spacing: 10) {
+            Image("Logo")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 36, height: 36)
+
+            VStack(alignment: .leading, spacing: 1) {
                 Text("app.name")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
+                Text("footer.opensource")
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity)
-            
-            HStack(spacing: 12) {
-                Menu("menu.donate") {
-                    DonationMenuItemsView()
-                }
-                Menu("menu.about") {
-                    Button("about.open_github") { AppLinks.openGitHub() }
-                    Button("about.privacy") { AppLinks.openPrivacy() }
-                    Divider()
-                    Button("about.support") { AppLinks.openSupport() }
-                }
-                Spacer()
-                Button("action.quit") {
-                    NSApplication.shared.terminate(nil)
-                }
+
+            Spacer()
+
+            Menu("menu.about") {
+                Button("about.open_github") { AppLinks.openGitHub() }
+                Button("about.privacy") { AppLinks.openPrivacy() }
+                Divider()
+                Button("about.support") { AppLinks.openSupport() }
+            }
+
+            Button("action.quit") {
+                NSApplication.shared.terminate(nil)
             }
         }
         .font(.system(size: 12))
@@ -297,23 +343,24 @@ struct MenuRootView: View {
         .environmentObject(AppModel())
 }
 
-private func formatSize(_ bytes: Int64) -> String {
-    if bytes <= 0 { return "0 MB" }
-    if bytes < 1_000_000 { return "<1 MB" }
-    if bytes >= 1_000_000_000 {
-        return String(format: "%.1f GB", Double(bytes) / 1_000_000_000.0)
-    }
-    return String(format: "%.0f MB", Double(bytes) / 1_000_000.0)
-}
-
 private func L(_ key: String) -> String {
     NSLocalizedString(key, comment: "")
+}
+
+private func formatArchiveDate(_ date: Date?) -> String {
+    guard let date else { return "" }
+    return date.formatted(date: .abbreviated, time: .shortened)
+}
+
+private func formatOptionalDate(_ date: Date?) -> String {
+    guard let date else { return "" }
+    return date.formatted(date: .abbreviated, time: .shortened)
 }
 
 private extension MenuRootView {
     @ViewBuilder
     func standardCategoryRow(prefIndex idx: Int, cat: CacheCategoryPreference) -> some View {
-        HStack(alignment: .center, spacing: 10) {
+        HStack(alignment: .center, spacing: categoryRowSpacing) {
             Toggle(isOn: Binding(
                 get: { model.preferences.categories[idx].includedInOneTapClean },
                 set: { newValue in
@@ -330,6 +377,9 @@ private extension MenuRootView {
             VStack(alignment: .leading, spacing: 2) {
                 Text(LocalizedStringKey(cat.title))
                     .font(.system(size: 12))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .help(L(cat.title))
                 Text(LocalizedStringKey(cat.description))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary.opacity(0.9))
@@ -339,17 +389,22 @@ private extension MenuRootView {
             }
             
             Spacer()
+
+            Color.clear
+                .frame(width: categoryChevronColumnWidth, height: 18)
             
             let bytes = model.snapshot?.categories.first(where: { $0.id == cat.id })?.sizeBytes ?? 0
-            Text(formatSize(bytes))
+            Text(SizeFormatting.short(bytes))
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .frame(width: categorySizeColumnWidth, alignment: .trailing)
         }
     }
     
     @ViewBuilder
     func runtimesCategoryRow(prefIndex idx: Int, cat: CacheCategoryPreference) -> some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: categoryRowSpacing) {
             Toggle(isOn: Binding(
                 get: { model.preferences.categories[idx].includedInOneTapClean },
                 set: { newValue in
@@ -363,12 +418,13 @@ private extension MenuRootView {
             .controlSize(.small)
             
             VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                HStack(alignment: .center, spacing: categoryHeaderTrailingSpacing) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(LocalizedStringKey(cat.title))
                             .font(.system(size: 12))
                             .lineLimit(2)
                             .layoutPriority(2)
+                            .help(L(cat.title))
                         Text(LocalizedStringKey(cat.description))
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary.opacity(0.9))
@@ -389,14 +445,16 @@ private extension MenuRootView {
                             .rotationEffect(.degrees(isRuntimesExpanded ? 90 : 0))
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.secondary)
-                            .frame(width: 16, height: 16)
                     }
                     .buttonStyle(.plain)
+                    .frame(width: categoryChevronColumnWidth, height: 18)
                     
                     let bytes = model.snapshot?.categories.first(where: { $0.id == cat.id })?.sizeBytes ?? 0
-                    Text(formatSize(bytes))
+                    Text(SizeFormatting.short(bytes))
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .frame(width: categorySizeColumnWidth, alignment: .trailing)
                 }
                 
                 if isRuntimesExpanded {
@@ -433,7 +491,310 @@ private extension MenuRootView {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    @ViewBuilder
+    func archivesCategoryRow(prefIndex idx: Int, cat: CacheCategoryPreference) -> some View {
+        HStack(alignment: .top, spacing: categoryRowSpacing) {
+            Toggle(isOn: Binding(
+                get: { model.preferences.categories[idx].includedInOneTapClean },
+                set: { newValue in
+                    var p = model.preferences
+                    p.categories[idx].includedInOneTapClean = newValue
+                    model.updatePreferences(p)
+                }
+            )) { EmptyView() }
+            .toggleStyle(.switch)
+            .labelsHidden()
+            .controlSize(.small)
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .center, spacing: categoryHeaderTrailingSpacing) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(LocalizedStringKey(cat.title))
+                            .font(.system(size: 12))
+                            .lineLimit(2)
+                            .layoutPriority(2)
+                            .help(L(cat.title))
+                        Text(LocalizedStringKey(cat.description))
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary.opacity(0.9))
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .help(L(cat.description))
+                    }
+
+                    Spacer()
+
+                    Button {
+                        withAnimation(.snappy(duration: 0.18)) {
+                            isArchivesExpanded.toggle()
+                        }
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .rotationEffect(.degrees(isArchivesExpanded ? 90 : 0))
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(width: categoryChevronColumnWidth, height: 18)
+
+                    let bytes = model.snapshot?.categories.first(where: { $0.id == cat.id })?.sizeBytes ?? 0
+                    Text(SizeFormatting.short(bytes))
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                        .frame(width: categorySizeColumnWidth, alignment: .trailing)
+                }
+
+                if isArchivesExpanded {
+                    archivesList
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var archivesList: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            let archives = model.snapshot?.allArchives ?? []
+            if archives.isEmpty {
+                Text("archive.empty")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+
+                if let err = model.snapshot?.categoryErrors?["archives"] {
+                    Text(String(format: String(localized: "archive.scan_failed.inline.format"), err))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.orange)
+                        .lineLimit(4)
+                        .textSelection(.enabled)
+                }
+            } else {
+                ForEach(archives) { archive in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Toggle(isOn: Binding(
+                            get: { model.selectedArchives[archive.deletionKey] ?? false },
+                            set: { model.selectedArchives[archive.deletionKey] = $0 }
+                        )) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(archive.name)
+                                    .font(.system(size: 12))
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                let dateText = formatArchiveDate(archive.createdAt)
+                                if !dateText.isEmpty {
+                                    Text(dateText)
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .help(archive.path)
+
+                        Spacer()
+
+                        Text(SizeFormatting.short(archive.sizeBytes))
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .padding(.top, 6)
+    }
+
+    @ViewBuilder
+    func itemListCategoryRow(prefIndex idx: Int, cat: CacheCategoryPreference) -> some View {
+        HStack(alignment: .top, spacing: categoryRowSpacing) {
+            Toggle(isOn: Binding(
+                get: { model.preferences.categories[idx].includedInOneTapClean },
+                set: { newValue in
+                    var p = model.preferences
+                    p.categories[idx].includedInOneTapClean = newValue
+                    model.updatePreferences(p)
+                }
+            )) { EmptyView() }
+            .toggleStyle(.switch)
+            .labelsHidden()
+            .controlSize(.small)
+
+            VStack(alignment: .leading, spacing: 6) {
+                expandableHeader(
+                    cat: cat,
+                    expanded: expandedItemListCategories.contains(cat.id),
+                    toggle: {
+                        withAnimation(.snappy(duration: 0.18)) {
+                            if expandedItemListCategories.contains(cat.id) {
+                                expandedItemListCategories.remove(cat.id)
+                            } else {
+                                expandedItemListCategories.insert(cat.id)
+                            }
+                        }
+                    }
+                )
+
+                if expandedItemListCategories.contains(cat.id) {
+                    cleanableItemsList(categoryID: cat.id)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    func unavailableSimulatorsCategoryRow(prefIndex idx: Int, cat: CacheCategoryPreference) -> some View {
+        HStack(alignment: .top, spacing: categoryRowSpacing) {
+            Toggle(isOn: Binding(
+                get: { model.preferences.categories[idx].includedInOneTapClean },
+                set: { newValue in
+                    var p = model.preferences
+                    p.categories[idx].includedInOneTapClean = newValue
+                    model.updatePreferences(p)
+                }
+            )) { EmptyView() }
+            .toggleStyle(.switch)
+            .labelsHidden()
+            .controlSize(.small)
+
+            VStack(alignment: .leading, spacing: 6) {
+                expandableHeader(
+                    cat: cat,
+                    expanded: isUnavailableSimulatorsExpanded,
+                    toggle: {
+                        withAnimation(.snappy(duration: 0.18)) {
+                            isUnavailableSimulatorsExpanded.toggle()
+                        }
+                    }
+                )
+
+                if isUnavailableSimulatorsExpanded {
+                    unavailableSimulatorsList
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func expandableHeader(cat: CacheCategoryPreference, expanded: Bool, toggle: @escaping () -> Void) -> some View {
+        HStack(alignment: .center, spacing: categoryHeaderTrailingSpacing) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(LocalizedStringKey(cat.title))
+                    .font(.system(size: 12))
+                    .lineLimit(2)
+                    .layoutPriority(2)
+                    .help(L(cat.title))
+                Text(LocalizedStringKey(cat.description))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary.opacity(0.9))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .help(L(cat.description))
+            }
+
+            Spacer()
+
+            Button(action: toggle) {
+                Image(systemName: "chevron.right")
+                    .rotationEffect(.degrees(expanded ? 90 : 0))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .frame(width: categoryChevronColumnWidth, height: 18)
+
+            let bytes = model.snapshot?.categories.first(where: { $0.id == cat.id })?.sizeBytes ?? 0
+            Text(SizeFormatting.short(bytes))
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .frame(width: categorySizeColumnWidth, alignment: .trailing)
+        }
+    }
+
+    private func cleanableItemsList(categoryID: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            let items = model.snapshot?.cleanableItems(for: categoryID) ?? []
+            if items.isEmpty {
+                Text("item.empty")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(items) { item in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Toggle(isOn: Binding(
+                            get: { model.selectedCleanableItems[item.deletionKey] ?? false },
+                            set: { model.selectedCleanableItems[item.deletionKey] = $0 }
+                        )) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(item.name)
+                                    .font(.system(size: 12))
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                let secondary = item.detail ?? formatOptionalDate(item.createdAt)
+                                if !secondary.isEmpty {
+                                    Text(secondary)
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                            }
+                        }
+                        .help(item.path)
+
+                        Spacer()
+
+                        Text(SizeFormatting.short(item.sizeBytes))
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .padding(.top, 6)
+    }
+
+    private var unavailableSimulatorsList: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            let devices = model.snapshot?.unavailableSimulators ?? []
+            if devices.isEmpty {
+                Text("simulator.unavailable.empty")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(devices) { device in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Toggle(isOn: Binding(
+                            get: { model.selectedUnavailableSimulators[device.deletionKey] ?? false },
+                            set: { model.selectedUnavailableSimulators[device.deletionKey] = $0 }
+                        )) {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(device.name)
+                                    .font(.system(size: 12))
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                                Text(device.availabilityError ?? device.runtimeIdentifier)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .truncationMode(.middle)
+                            }
+                        }
+                        .help(device.id)
+
+                        Spacer()
+
+                        Text(device.sizeBytes.map(SizeFormatting.short) ?? "—")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .padding(.top, 6)
     }
 }
 
