@@ -5,7 +5,6 @@ APP_NAME="XcodeCacheCleaner"
 PROJECT="XcodeCacheCleaner.xcodeproj"
 SCHEME="XcodeCacheCleaner"
 CONFIGURATION="Release"
-ARCH="$(uname -m)"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DERIVED_DATA="$ROOT_DIR/.build/DerivedData"
 DIST_DIR="$ROOT_DIR/dist"
@@ -19,9 +18,12 @@ xcodebuild \
   -project "$PROJECT" \
   -scheme "$SCHEME" \
   -configuration "$CONFIGURATION" \
-  -destination "platform=macOS,arch=$ARCH" \
+  -destination "generic/platform=macOS" \
   -derivedDataPath "$DERIVED_DATA" \
+  ARCHS="arm64 x86_64" \
+  ONLY_ACTIVE_ARCH=NO \
   -quiet \
+  clean \
   build
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_BUNDLE/Contents/Info.plist")"
