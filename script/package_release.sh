@@ -9,6 +9,7 @@ ARCH="$(uname -m)"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DERIVED_DATA="$ROOT_DIR/.build/DerivedData"
 DIST_DIR="$ROOT_DIR/dist"
+STAGING_DIR="$ROOT_DIR/.build/release-dmg"
 APP_BUNDLE="$DERIVED_DATA/Build/Products/$CONFIGURATION/$APP_NAME.app"
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_BUNDLE/Contents/Info.plist" 2>/dev/null || true)"
 
@@ -25,10 +26,22 @@ xcodebuild \
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_BUNDLE/Contents/Info.plist")"
 BUILD="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_BUNDLE/Contents/Info.plist")"
-ZIP_NAME="$APP_NAME-$VERSION-$BUILD-macOS.zip"
+DMG_NAME="$APP_NAME-$VERSION-$BUILD-macOS.dmg"
 
 rm -rf "$DIST_DIR"
+rm -rf "$STAGING_DIR"
 mkdir -p "$DIST_DIR"
-/usr/bin/ditto -c -k --keepParent --norsrc --noextattr "$APP_BUNDLE" "$DIST_DIR/$ZIP_NAME"
+mkdir -p "$STAGING_DIR"
+/usr/bin/ditto --norsrc --noextattr "$APP_BUNDLE" "$STAGING_DIR/$APP_NAME.app"
+ln -s /Applications "$STAGING_DIR/Applications"
 
-echo "$DIST_DIR/$ZIP_NAME"
+/usr/bin/hdiutil create \
+  -volname "$APP_NAME" \
+  -srcfolder "$STAGING_DIR" \
+  -ov \
+  -format UDZO \
+  "$DIST_DIR/$DMG_NAME" >/dev/null
+
+rm -rf "$STAGING_DIR"
+
+echo "$DIST_DIR/$DMG_NAME"

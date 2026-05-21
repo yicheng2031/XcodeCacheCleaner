@@ -53,7 +53,7 @@ Build, launch, and verify the process:
 ./script/build_and_run.sh --verify
 ```
 
-Create a release zip:
+Create a release DMG:
 
 ```bash
 ./script/package_release.sh
