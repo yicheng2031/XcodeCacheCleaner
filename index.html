@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Xcode Cache Cleaner is a free open-source macOS menu bar utility for cleaning Xcode, Simulator, SwiftPM, archive, and device-support caches." />
+  <title>Xcode Cache Cleaner</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --surface-soft: #eef3f8;
+      --text: #17202a;
+      --muted: #5e6b78;
+      --line: rgba(23, 32, 42, .12);
+      --blue: #0077ff;
+      --green: #16845f;
+      --shadow: 0 22px 70px rgba(26, 39, 56, .16);
+      --radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101416;
+        --surface: #171d20;
+        --surface-soft: #20282d;
+        --text: #f2f5f7;
+        --muted: #a4adb5;
+        --line: rgba(242, 245, 247, .13);
+        --shadow: 0 22px 70px rgba(0, 0, 0, .36);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    a { color: inherit; }
+
+    .wrap {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--bg) 86%, transparent);
+      backdrop-filter: blur(18px);
+    }
+
+    nav {
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    .brand img {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+    }
+
+    .hero {
+      min-height: calc(100vh - 68px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
+      align-items: center;
+      gap: 64px;
+      padding: 60px 0 72px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--green);
+      font-size: 14px;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    h1 {
+      font-size: clamp(46px, 7vw, 82px);
+      line-height: .96;
+      letter-spacing: 0;
+      margin: 0 0 22px;
+      max-width: 820px;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 20px;
+      max-width: 700px;
+      margin: 0 0 12px;
+    }
+
+    .lead.zh {
+      font-size: 18px;
+      margin-bottom: 30px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: var(--radius);
+      text-decoration: none;
+      font-weight: 800;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .button.primary {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    .meta {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 10px;
+      background: color-mix(in srgb, var(--surface) 70%, transparent);
+    }
+
+    .product {
+      display: grid;
+      gap: 18px;
+    }
+
+    .app-icon {
+      width: 148px;
+      height: 148px;
+      border-radius: 32px;
+      box-shadow: var(--shadow);
+      justify-self: center;
+    }
+
+    .menu-preview {
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .preview-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+      font-weight: 800;
+    }
+
+    .preview-title {
+      margin: 16px 0 12px;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .rows {
+      display: grid;
+      gap: 12px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .toggle {
+      width: 44px;
+      height: 24px;
+      border-radius: 999px;
+      background: var(--blue);
+      position: relative;
+    }
+
+    .toggle::after {
+      content: "";
+      position: absolute;
+      right: 3px;
+      top: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #dcebff;
+    }
+
+    .row strong { display: block; }
+    .row span { color: var(--muted); font-size: 13px; }
+    .size { color: var(--muted); font-weight: 800; white-space: nowrap; }
+
+    section {
+      padding: 76px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    h2 {
+      font-size: 34px;
+      line-height: 1.08;
+      margin: 0 0 16px;
+      letter-spacing: 0;
+    }
+
+    .section-lead {
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 18px;
+      margin: 0 0 34px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .feature h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .feature p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .categories {
+      columns: 2;
+      column-gap: 46px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .categories li {
+      break-inside: avoid;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .download-band {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .download-band p {
+      margin: 6px 0 0;
+      color: var(--muted);
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 34px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    footer .wrap {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    footer a { text-decoration: none; }
+
+    @media (max-width: 860px) {
+      .wrap { width: min(100% - 28px, 1120px); }
+      .nav-links { gap: 12px; font-size: 13px; }
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 38px;
+        padding-top: 38px;
+      }
+      .product { max-width: 520px; }
+      .grid { grid-template-columns: 1fr; }
+      .categories { columns: 1; }
+      .download-band { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 560px) {
+      .nav-links a:not(.button) { display: none; }
+      .brand span { display: none; }
+      .button { width: 100%; }
+      .actions .button { width: auto; }
+      h1 { font-size: 44px; }
+      .lead { font-size: 18px; }
+      .lead.zh { font-size: 16px; }
+      .preview-top { display: block; }
+      .row { grid-template-columns: 44px 1fr; }
+      .size { grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="wrap" aria-label="Main navigation">
+      <a class="brand" href="#">
+        <img src="XcodeCacheCleaner/Assets.xcassets/AppIcon.appiconset/icon_128.png" alt="Xcode Cache Cleaner icon" />
+        <span>Xcode Cache Cleaner</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#cleanup">Cleanup</a>
+        <a href="https://github.com/yicheng2031/XcodeCacheCleaner">GitHub</a>
+        <a class="button primary" href="https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest">Download</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <div>
+        <div class="eyebrow">Free and open source for macOS</div>
+        <h1>Xcode Cache Cleaner</h1>
+        <p class="lead">Clean Xcode, Simulator, SwiftPM, archive, and device-support caches from a focused menu bar utility.</p>
+        <p class="lead zh">免费开源的 macOS 菜单栏工具，用于扫描和清理 Xcode、Simulator、SwiftPM、归档与真机调试缓存。</p>
+        <div class="actions">
+          <a class="button primary" href="https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest">Download DMG</a>
+          <a class="button" href="https://github.com/yicheng2031/XcodeCacheCleaner">View on GitHub</a>
+        </div>
+        <div class="meta" aria-label="Compatibility">
+          <span class="pill">macOS 13+</span>
+          <span class="pill">Intel + Apple Silicon</span>
+          <span class="pill">Universal 2</span>
+          <span class="pill">No analytics</span>
+        </div>
+      </div>
+
+      <div class="product" aria-label="Product preview">
+        <img class="app-icon" src="XcodeCacheCleaner/Assets.xcassets/AppIcon.appiconset/icon_256.png" alt="Xcode Cache Cleaner app icon" />
+        <div class="menu-preview">
+          <div class="preview-top">
+            <span>Xcode Cache 9.1 GB</span>
+            <span>Disk 65%</span>
+          </div>
+          <div class="preview-title">Xcode Cache Categories</div>
+          <div class="rows">
+            <div class="row">
+              <span class="toggle"></span>
+              <div><strong>DerivedData</strong><span>Build products and indexes</span></div>
+              <div class="size">210 MB</div>
+            </div>
+            <div class="row">
+              <span class="toggle"></span>
+              <div><strong>Simulator Runtimes</strong><span>iOS, watchOS, tvOS, visionOS</span></div>
+              <div class="size">8.8 GB</div>
+            </div>
+            <div class="row">
+              <span class="toggle"></span>
+              <div><strong>Archives</strong><span>Old Xcode archives</span></div>
+              <div class="size">1.4 GB</div>
+            </div>
+            <div class="row">
+              <span class="toggle"></span>
+              <div><strong>SwiftPM Caches</strong><span>Dependency cache</span></div>
+              <div class="size">86 MB</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features">
+      <div class="wrap">
+        <h2>Built for everyday Xcode cleanup</h2>
+        <p class="section-lead">The app keeps cleanup visible and selective. You can inspect categories, expand item lists, and remove only the data you actually want to clean.</p>
+        <div class="grid">
+          <article class="feature">
+            <h3>Selective by default</h3>
+            <p>Choose full categories or expand Runtimes, Archives, DerivedData, SwiftPM caches, logs, and unavailable simulators.</p>
+          </article>
+          <article class="feature">
+            <h3>Runtime aware</h3>
+            <p>Simulator Runtime cleanup uses stable runtime identifiers, so older iOS/watchOS/tvOS/visionOS runtimes can be removed reliably.</p>
+          </article>
+          <article class="feature">
+            <h3>Local and private</h3>
+            <p>No account, no tracking, no analytics, no cloud sync. Scanning and deletion run locally on your Mac.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="cleanup">
+      <div class="wrap">
+        <h2>Cleanup coverage / 清理范围</h2>
+        <p class="section-lead">Common Xcode and Apple development cache locations are grouped into clear categories, with destructive items shown before cleanup.</p>
+        <ul class="categories">
+          <li>DerivedData / 编译产物与索引</li>
+          <li>Xcode Caches / Xcode 缓存</li>
+          <li>Simulator Logs and Caches / 模拟器日志与缓存</li>
+          <li>SwiftUI Previews / SwiftUI 预览数据</li>
+          <li>Simulator Devices / 模拟器设备数据</li>
+          <li>iOS DeviceSupport / 真机符号文件</li>
+          <li>Archives / Xcode 归档</li>
+          <li>Xcode Logs / Xcode 活动日志</li>
+          <li>SwiftPM Caches / SwiftPM 依赖缓存</li>
+          <li>Simulator Runtimes / 模拟器 Runtime</li>
+          <li>Unavailable Simulators / 不可用模拟器</li>
+          <li>Device Logs / 真机诊断日志</li>
+          <li>Xcode Products / Xcode 产品缓存</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="download">
+      <div class="wrap">
+        <div class="download-band">
+          <div>
+            <h2>Download the Universal DMG</h2>
+            <p>Supports Intel and Apple Silicon Macs. Requires macOS 13 or later.</p>
+            <p>支持 Intel 与 Apple Silicon Mac，要求 macOS 13 或更高版本。</p>
+          </div>
+          <a class="button primary" href="https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest">Download Latest</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>MIT License · Free open-source software</span>
+      <span>
+        <a href="privacy.html">Privacy</a> ·
+        <a href="support.html">Support</a> ·
+        <a href="https://github.com/yicheng2031/XcodeCacheCleaner/issues">Issues</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>
