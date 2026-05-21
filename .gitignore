@@ -17,18 +17,10 @@ Package.resolved
 
 # Release artifacts
 dist/
-*.zip
 *.dmg
-
-# AppCode
-.idea/
 
 # Logs
 *.log
-
-# App Store copy (local only)
-APP_STORE_COPY.md
-飞书赞助页文案.md
 
 # Secrets (do not commit)
 Github-Token.md
