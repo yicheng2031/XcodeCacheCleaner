@@ -237,6 +237,8 @@ struct RuntimeItem: Codable, Equatable, Identifiable {
     var build: String?
     var deletable: Bool?
     var sizeBytes: Int64?
+    var mountPath: String? = nil
+    var parentMountPath: String? = nil
     
     /// 用于删除的参数。
     var deleteArgument: String {

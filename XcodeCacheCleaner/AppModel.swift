@@ -196,7 +196,13 @@ final class AppModel: ObservableObject {
                     format: String(localized: "runtime.delete_failed.format"),
                     (error as NSError).localizedDescription
                 )
-                runtimeFallbackCommands = runtimesToDelete.map { "xcrun simctl runtime delete \($0.deleteArgument)" } + ["xcrun simctl delete unavailable"]
+                runtimeFallbackCommands = [
+                    "SIMCTL=\"$(xcrun --find simctl 2>/dev/null || printf '%s' '/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl')\""
+                ] + runtimesToDelete.map { "\"$SIMCTL\" runtime delete \($0.deleteArgument)" } + [
+                    "\"$SIMCTL\" runtime list",
+                    "mount | grep CoreSimulator || true",
+                    "diskutil list | grep -i -C 2 simulator || true"
+                ]
             } else {
                 lastErrorMessage = (error as NSError).localizedDescription
             }
