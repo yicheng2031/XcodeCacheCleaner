@@ -1252,6 +1252,118 @@
           }
         }
       }
+    },
+    "auto_clean.status.next.format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, next at %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@，下次执行：%2$@"
+          }
+        }
+      }
+    },
+    "auto_clean.last_run.format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last scheduled cleanup: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上次定时清理：%@"
+          }
+        }
+      }
+    },
+    "auto_clean.failed.format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled cleanup failed: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定时清理失败：%@"
+          }
+        }
+      }
+    },
+    "auto_clean.login_item_failed.format": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cannot keep the app running at login: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法设置登录时启动应用：%@"
+          }
+        }
+      }
+    },
+    "auto_clean.scope.note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caches/logs only; other items stay manual."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅清理缓存和日志；其他项目需手动。"
+          }
+        }
+      }
+    },
+    "auto_clean.error.scan_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current cache scan could not be completed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本次缓存扫描未能完成。"
+          }
+        }
+      }
+    },
+    "auto_clean.error.clean_failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The cleanup operation did not complete successfully."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本次清理未能完整完成。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

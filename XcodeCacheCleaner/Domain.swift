@@ -53,6 +53,41 @@ enum AutoCleanSchedule: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// Persisted wall-clock state for automatic cleaning.
+/// A one-shot timer is recreated from this state whenever the app launches,
+/// so the schedule does not depend on the process having stayed alive for the
+/// whole interval.
+struct AutoCleanState: Codable, Equatable {
+    var schedule: AutoCleanSchedule
+    var nextRunAt: Date?
+    var lastRunAt: Date?
+    var lastErrorMessage: String?
+
+    static let empty = AutoCleanState(
+        schedule: .off,
+        nextRunAt: nil,
+        lastRunAt: nil,
+        lastErrorMessage: nil
+    )
+}
+
+/// Item-level selections are separate from the scan snapshot. They describe
+/// the user's cleanup policy and must survive an app restart for scheduled
+/// cleanup to remain predictable.
+struct SelectionState: Codable, Equatable {
+    var runtimes: [String: Bool]
+    var archives: [String: Bool]
+    var cleanableItems: [String: Bool]
+    var unavailableSimulators: [String: Bool]
+
+    static let empty = SelectionState(
+        runtimes: [:],
+        archives: [:],
+        cleanableItems: [:],
+        unavailableSimulators: [:]
+    )
+}
+
 struct CacheCategoryPreference: Codable, Equatable, Identifiable {
     var id: String
     var title: String
@@ -61,6 +96,22 @@ struct CacheCategoryPreference: Codable, Equatable, Identifiable {
     var scanPaths: [String]?
     var includedInOneTapClean: Bool
     var action: CleanActionDefinition
+
+    /// Automatic cleanup is intentionally limited to rebuildable files and
+    /// caches. Runtime deletion, archive deletion, unavailable-device
+    /// deletion, and simulator data erasure remain explicit manual actions.
+    var allowsAutomaticClean: Bool {
+        switch action {
+        case .deletePaths:
+            // DeviceSupport is rebuildable but can be many gigabytes and is
+            // needed immediately when a physical device reconnects.
+            return id != "deviceSupport"
+        case .itemList:
+            return true
+        case .command, .runtimes, .archives, .unavailableSimulators:
+            return false
+        }
+    }
     
     static let defaultCategories: [CacheCategoryPreference] = [
         .init(

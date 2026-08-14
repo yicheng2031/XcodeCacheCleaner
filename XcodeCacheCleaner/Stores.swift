@@ -62,3 +62,39 @@ final class SnapshotStore {
         defaults.set(data, forKey: key)
     }
 }
+
+final class AutoCleanStore {
+    private let key = "autoCleanState.v1"
+    private let defaults = UserDefaults.standard
+
+    func load() -> AutoCleanState {
+        guard
+            let data = defaults.data(forKey: key),
+            let value = try? JSONDecoder().decode(AutoCleanState.self, from: data)
+        else { return .empty }
+        return value
+    }
+
+    func save(_ value: AutoCleanState) {
+        guard let data = try? JSONEncoder().encode(value) else { return }
+        defaults.set(data, forKey: key)
+    }
+}
+
+final class SelectionStore {
+    private let key = "selection.v1"
+    private let defaults = UserDefaults.standard
+
+    func load() -> SelectionState {
+        guard
+            let data = defaults.data(forKey: key),
+            let value = try? JSONDecoder().decode(SelectionState.self, from: data)
+        else { return .empty }
+        return value
+    }
+
+    func save(_ value: SelectionState) {
+        guard let data = try? JSONEncoder().encode(value) else { return }
+        defaults.set(data, forKey: key)
+    }
+}
