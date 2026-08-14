@@ -32,10 +32,20 @@ If you want something clearer than Terminal commands but safer than blindly dele
 
 ## 产品截图 / Screenshots
 
+### 中文界面 / Chinese UI
+
 <p align="center">
   <img src="docs/screenshots/menu-overview.png" alt="Xcode Cache Cleaner menu overview" width="250">
   <img src="docs/screenshots/runtime-selection.png" alt="Runtime selection" width="250">
   <img src="docs/screenshots/schedule-menu.png" alt="Scheduled cleanup menu" width="300">
+</p>
+
+### 英文界面 / English UI
+
+<p align="center">
+  <img src="docs/screenshots/menu-overview-en.png" alt="Xcode Cache Cleaner menu overview in English" width="250">
+  <img src="docs/screenshots/runtime-selection-en.png" alt="Runtime selection in English" width="250">
+  <img src="docs/screenshots/schedule-menu-en.png" alt="Scheduled cleanup menu in English" width="300">
 </p>
 
 菜单栏总览显示 Xcode 缓存总量、磁盘占用比例、各分类大小，以及重新检测和立即清理入口。<br>
