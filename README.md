@@ -8,6 +8,16 @@ Xcode Cache Cleaner is a free, open-source macOS menu bar utility that shows whe
 
 [下载 DMG / Download DMG](https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest) · [项目主页 / Website](https://yicheng2031.github.io/XcodeCacheCleaner/) · [隐私 / Privacy](./PRIVACY.md) · [反馈 / Issues](https://github.com/yicheng2031/XcodeCacheCleaner/issues)
 
+## 最新发布 / Latest release
+
+### v1.3：已签名并通过 Apple 公证 / Signed and notarized
+
+v1.3 的 DMG 使用 Apple `Developer ID Application` 证书签名，并已通过 Apple 公证。下载后将应用拖入 Applications，正常情况下不需要在“隐私与安全”中选择“仍要打开”。<br>
+The v1.3 DMG is signed with an Apple `Developer ID Application` certificate and notarized by Apple. After downloading and moving the app to Applications, users normally do not need to choose “Open Anyway” in Privacy & Security.
+
+这是通过 GitHub 和项目网站直接分发的 macOS 应用，不是 Mac App Store 上架。项目源码保持开源；从源码自行编译或修改后的构建，需要由构建者使用自己的 Developer ID 证书签名并公证。<br>
+This is a macOS app distributed directly through GitHub and the project website, not through the Mac App Store. The source remains open source; builds made from modified or forked source must be signed and notarized by their own distributor.
+
 ## 为什么需要它 / Why this project
 
 DerivedData、Simulator Runtime、模拟器设备数据、DeviceSupport、归档、日志和 SwiftPM 缓存，常常比项目源码更快地占满磁盘。<br>
@@ -154,12 +164,13 @@ Development requires macOS 13+ and Xcode 15+.
 # Build, launch, and verify the process
 ./script/build_and_run.sh --verify
 
-# Create a Universal 2 DMG
+# Create a signed and notarized Universal 2 DMG
 ./script/package_release.sh
 ```
 
 发布文件会写入 `dist/`。<br>
-Release artifacts are written to `dist/`.
+Release artifacts are written to `dist/`. The release script requires a `Developer ID Application` certificate in the local keychain and the `xcode-cache-cleaner-notary` `notarytool` keychain profile; credentials are never committed to the repository.<br>
+发布脚本要求当前 Mac 的钥匙串中有 `Developer ID Application` 证书，并已配置 `xcode-cache-cleaner-notary` `notarytool` 钥匙串 profile；凭据不会提交到仓库。
 
 ## 隐私与许可证 / Privacy and license
 

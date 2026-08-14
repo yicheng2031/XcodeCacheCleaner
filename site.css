@@ -365,6 +365,27 @@ body[data-lang="en"] .lang-media.lang-en {
   content: "·";
 }
 
+.opening-release {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  max-width: 570px;
+  margin: 18px 0 0;
+  padding: 11px 13px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.opening-release strong {
+  color: var(--text-primary);
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
 .opening-evidence,
 .product-evidence {
   margin: 0;
