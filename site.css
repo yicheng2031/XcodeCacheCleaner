@@ -103,12 +103,26 @@ button {
   display: none;
 }
 
+.lang-media {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.lang-media.lang-en {
+  display: none;
+}
+
 body[data-lang="en"] .lang-zh {
   display: none;
 }
 
 body[data-lang="en"] .lang-en {
   display: inline;
+}
+
+body[data-lang="en"] .lang-media.lang-en {
+  display: flex;
 }
 
 .site-header {
