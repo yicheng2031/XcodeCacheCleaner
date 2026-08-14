@@ -1,53 +1,129 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Xcode Cache Cleaner - Support</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Segoe UI, Helvetica, Arial, sans-serif; margin: 40px auto; max-width: 860px; padding: 0 20px; line-height: 1.6; }
-    h1, h2 { line-height: 1.2; }
-    .lang { display: flex; gap: 12px; margin: 12px 0 24px; }
-    .card { border: 1px solid rgba(127,127,127,.3); border-radius: 12px; padding: 18px 18px; margin: 18px 0; }
-    .muted { opacity: .75; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    a { color: inherit; }
-  </style>
+  <meta name="description" content="Simple support for new iOS developers using Xcode Cache Cleaner, including permissions, Runtime cleanup, and scheduled cleanup." />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Xcode Cache Cleaner — Support / 支持</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" referrerpolicy="no-referrer" />
+  <link rel="icon" type="image/png" href="XcodeCacheCleaner/Assets.xcassets/AppIcon.appiconset/icon_32.png" />
+  <link rel="stylesheet" href="site.css" />
+  <script src="site.js" defer></script>
 </head>
-<body>
-  <h1>Xcode Cache Cleaner — Support</h1>
-  <div class="lang">
-    <a href="#en">English</a>
-    <a href="#zh">简体中文</a>
-  </div>
+<body data-lang="zh">
+  <a class="skip-link" href="#main"><span class="lang-zh">跳到主要内容</span><span class="lang-en">Skip to content</span></a>
 
-  <div class="card" id="en">
-    <h2>English</h2>
-    <p class="muted">Last updated: 2026-04-17</p>
-    <h3>FAQ</h3>
-    <p><strong>1) Why do some categories show 0 or “scan failed”?</strong><br/>
-      On the Mac App Store (sandbox) build, the app needs your permission to access <code>~/Library</code>. Open the app menu → About → Grant Access… and select your <code>~/Library</code> folder (recommended).
-    </p>
-    <p><strong>2) Is this app free?</strong><br/>
-      Yes. Xcode Cache Cleaner is free and open source, with no donation entry or paid unlocks.
-    </p>
-    <h3>Contact</h3>
-    <p>Please open an issue on GitHub: <a href="https://github.com/yicheng2031/XcodeCacheCleaner">https://github.com/yicheng2031/XcodeCacheCleaner</a></p>
-  </div>
+  <header class="site-header">
+    <div class="wrap site-header-inner">
+      <a class="brand" href="index.html" aria-label="Xcode Cache Cleaner home">
+        <img src="XcodeCacheCleaner/Assets.xcassets/AppIcon.appiconset/icon_256.png" alt="" />
+        <span class="brand-name">Xcode Cache Cleaner</span>
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="index.html#product"><span class="lang-zh">产品界面</span><span class="lang-en">Product</span></a>
+        <a href="index.html#coverage"><span class="lang-zh">清理边界</span><span class="lang-en">Safety</span></a>
+        <a href="support.html" aria-current="page"><span class="lang-zh">支持</span><span class="lang-en">Support</span></a>
+        <a href="privacy.html"><span class="lang-zh">隐私</span><span class="lang-en">Privacy</span></a>
+      </nav>
+      <details class="mobile-menu">
+        <summary>Menu / 菜单</summary>
+        <div class="mobile-menu-panel">
+          <a href="index.html#product"><span class="lang-zh">产品界面</span><span class="lang-en">Product</span></a>
+          <a href="index.html#coverage"><span class="lang-zh">清理边界</span><span class="lang-en">Safety</span></a>
+          <a href="support.html"><span class="lang-zh">支持</span><span class="lang-en">Support</span></a>
+          <a href="privacy.html"><span class="lang-zh">隐私</span><span class="lang-en">Privacy</span></a>
+        </div>
+      </details>
+      <div class="header-actions">
+        <button class="language-toggle" type="button" data-language-toggle aria-label="Switch site language to English">EN</button>
+        <a class="header-download" href="https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest" target="_blank" rel="noreferrer">
+          <span class="lang-zh">下载</span>
+          <span class="lang-en">Download</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9m0 0 3-3m-3 3-3-3M2.5 13.5h11" /></svg>
+        </a>
+      </div>
+    </div>
+  </header>
 
-  <div class="card" id="zh">
-    <h2>简体中文</h2>
-    <p class="muted">更新日期：2026-04-17</p>
-    <h3>常见问题</h3>
-    <p><strong>1）为什么有些分类显示 0 或提示扫描失败？</strong><br/>
-      Mac App Store（沙盒）版本需要你授权访问 <code>~/Library</code>。打开应用菜单 → 关于 → 授权访问…，建议选择你的 <code>~/Library</code> 文件夹。
-    </p>
-    <p><strong>2）这个应用是免费的吗？</strong><br/>
-      是。Xcode Cache Cleaner 是免费开源工具，不包含捐赠入口或付费解锁功能。
-    </p>
-    <h3>反馈与联系</h3>
-    <p>请到 GitHub 提交 Issue：<a href="https://github.com/yicheng2031/XcodeCacheCleaner">https://github.com/yicheng2031/XcodeCacheCleaner</a></p>
-  </div>
+  <main id="main" class="reading-main">
+    <div class="wrap reading-header">
+      <h1><span class="lang-zh">刚开始用？几步就能开始清理。</span><span class="lang-en">New to Xcode Cache Cleaner? Start in a few steps.</span></h1>
+      <p><span class="lang-zh">不用记命令，也不用到处找缓存目录。按下面几步，就能开始清理 Xcode 占用的空间。</span><span class="lang-en">No commands to memorize and no cache folders to hunt down. Follow these steps to start clearing space used by Xcode.</span></p>
+    </div>
+
+    <article class="wrap reading-layout">
+      <div class="reading-context"><span class="lang-zh">开始使用</span><span class="lang-en">Getting started</span></div>
+      <div class="reading-body">
+        <section class="reading-section">
+          <h2><span class="lang-zh">几步开始</span><span class="lang-en">Start in a few steps</span></h2>
+          <ol class="steps-list">
+            <li>
+              <h3><span class="lang-zh">打开菜单栏应用</span><span class="lang-en">Open the menu bar app</span></h3>
+              <p><span class="lang-zh">下载并打开应用，它会安静地待在菜单栏里。</span><span class="lang-en">Download and open the app. It stays quietly in your menu bar.</span></p>
+            </li>
+            <li>
+              <h3><span class="lang-zh">允许扫描</span><span class="lang-en">Allow access</span></h3>
+              <p><span class="lang-zh">如果你使用 Mac App Store 版本，打开应用菜单 → 关于 → 授权访问…，选择你的 <code>~/Library</code> 文件夹。</span><span class="lang-en">For the Mac App Store build, open the app menu → About → Grant Access… and choose your <code>~/Library</code> folder.</span></p>
+            </li>
+            <li>
+              <h3><span class="lang-zh">扫描并选择</span><span class="lang-en">Scan and choose</span></h3>
+              <p><span class="lang-zh">应用会列出 Xcode、Simulator 和 Runtime 占用的空间。按分类开关，或展开列表选择具体项目。</span><span class="lang-en">The app lists space used by Xcode, Simulator, and Runtimes. Toggle a category or expand a list to choose individual items.</span></p>
+            </li>
+            <li>
+              <h3><span class="lang-zh">点击清理</span><span class="lang-en">Clean up</span></h3>
+              <p><span class="lang-zh">点一下完成清理。熟悉后，还可以打开定时清理，让应用自动处理可重建的缓存和日志。</span><span class="lang-en">Click once to clean up. When you are ready, enable scheduled cleanup for rebuildable caches and logs.</span></p>
+            </li>
+          </ol>
+        </section>
+
+        <section class="reading-section">
+          <h2><span class="lang-zh">常见问题</span><span class="lang-en">Frequently asked</span></h2>
+
+          <div class="faq-item">
+            <h3><span class="lang-zh">为什么扫描不到内容？</span><span class="lang-en">Why can’t I see any space?</span></h3>
+            <p><span class="lang-zh">通常是应用没有访问对应目录的权限。请先完成上面的 <code>~/Library</code> 授权，然后重新检测；如果仍然失败，请在 Issue 中附上分类名称、macOS 版本和应用版本。</span><span class="lang-en">The app usually lacks permission for the corresponding directory. Grant access to <code>~/Library</code>, then scan again. If it still fails, include the category, macOS version, and app version in an issue.</span></p>
+          </div>
+
+          <div class="faq-item">
+            <h3><span class="lang-zh">Runtime 清理提示失败怎么办？</span><span class="lang-en">What if Runtime cleanup shows an error?</span></h3>
+            <p><span class="lang-zh">Runtime 清理使用系统的 <code>xcrun simctl</code> 命令。删除过程中如果 Runtime 已经消失，或系统还在更新状态，命令仍可能返回错误，界面就会出现“删除失败”。这更常见于目标状态变化，不一定是超时。先重新扫描确认结果；只有 Runtime 仍在时，才需要再次尝试。</span><span class="lang-en">Runtime cleanup uses the system <code>xcrun simctl</code> command. If the Runtime disappears during cleanup or the system is still updating its state, the command may return an error and the app can show “deletion failed.” This is more often a changing target state than a timeout. Scan again first, and retry only if the Runtime is still there.</span></p>
+          </div>
+
+          <div class="faq-item">
+            <h3><span class="lang-zh">清理后缓存又回来了？</span><span class="lang-en">Why did the cache come back?</span></h3>
+            <p><span class="lang-zh">可重建缓存可能会在下一次编译、运行或打开预览时重新生成；这不是清理失败，而是 Xcode 的正常工作方式。</span><span class="lang-en">Rebuildable caches may return when you compile, run, or open a preview again. That is normal Xcode behavior, not a cleanup failure.</span></p>
+          </div>
+
+          <div class="faq-item">
+            <h3><span class="lang-zh">这个应用收费吗？</span><span class="lang-en">Is the app free?</span></h3>
+            <p><span class="lang-zh">Xcode Cache Cleaner 免费且开源，不包含付费解锁或捐赠入口。</span><span class="lang-en">Xcode Cache Cleaner is free and open source, with no paid unlock or donation entry.</span></p>
+          </div>
+        </section>
+
+        <aside class="reading-note">
+          <strong><span class="lang-zh">需要帮助？</span><span class="lang-en">Need help?</span></strong>
+          <p><span class="lang-zh">请在 GitHub 提交 Issue，附上 macOS 版本、应用版本、相关分类和完整错误文本；不要上传项目源码或隐私文件。</span><span class="lang-en">Open a GitHub issue with your macOS version, app version, category, and full error text. Please do not upload project source or private files.</span></p>
+          <a href="https://github.com/yicheng2031/XcodeCacheCleaner/issues/new" target="_blank" rel="noreferrer"><span class="lang-zh">提交 Issue ↗</span><span class="lang-en">Open an issue ↗</span></a>
+        </aside>
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap site-footer-inner">
+      <div class="footer-brand">
+        <strong>Xcode Cache Cleaner</strong>
+        <span><span class="lang-zh">免费开源 · 仅在本机处理</span><span class="lang-en">Free and open source · Local only</span></span>
+      </div>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="index.html"><span class="lang-zh">首页</span><span class="lang-en">Home</span></a>
+        <a href="privacy.html"><span class="lang-zh">隐私</span><span class="lang-en">Privacy</span></a>
+        <a href="https://github.com/yicheng2031/XcodeCacheCleaner" target="_blank" rel="noreferrer">GitHub ↗</a>
+      </nav>
+    </div>
+  </footer>
 </body>
 </html>

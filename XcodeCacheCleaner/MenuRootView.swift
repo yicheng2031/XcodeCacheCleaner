@@ -73,6 +73,33 @@ struct MenuRootView: View {
                     .foregroundStyle(.red)
                     .lineLimit(3)
             }
+
+            if model.preferences.autoCleanSchedule != .off,
+               let err = model.lastAutoCleanError {
+                Text(String(format: String(localized: "auto_clean.failed.format"), err))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.red)
+                    .lineLimit(3)
+            }
+
+            if model.preferences.autoCleanSchedule != .off,
+               let lastRun = model.lastAutoCleanAt {
+                Text(
+                    String(
+                        format: String(localized: "auto_clean.last_run.format"),
+                        lastRun.formatted(date: .abbreviated, time: .shortened)
+                    )
+                )
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+            }
+
+            if let err = model.autoCleanLoginItemError {
+                Text(String(format: String(localized: "auto_clean.login_item_failed.format"), err))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.orange)
+                    .lineLimit(3)
+            }
             
             if let errors = model.snapshot?.categoryErrors, !errors.isEmpty {
                 let details: String = {
@@ -165,14 +192,20 @@ struct MenuRootView: View {
         case .off:
             return nil
         case .every1h:
-            return String(localized: "auto_clean.status.every1h")
+            return nextAutoCleanText(for: String(localized: "auto_clean.status.every1h"))
         case .every4h:
-            return String(localized: "auto_clean.status.every4h")
+            return nextAutoCleanText(for: String(localized: "auto_clean.status.every4h"))
         case .every12h:
-            return String(localized: "auto_clean.status.every12h")
+            return nextAutoCleanText(for: String(localized: "auto_clean.status.every12h"))
         case .every24h:
-            return String(localized: "auto_clean.status.every24h")
+            return nextAutoCleanText(for: String(localized: "auto_clean.status.every24h"))
         }
+    }
+
+    private func nextAutoCleanText(for intervalText: String) -> String {
+        guard let next = model.nextAutoCleanAt else { return intervalText }
+        let time = next.formatted(date: .omitted, time: .shortened)
+        return String(format: String(localized: "auto_clean.status.next.format"), intervalText, time)
     }
     
     private var categories: some View {
@@ -223,6 +256,7 @@ struct MenuRootView: View {
                 Task { await model.refresh(reason: "manual") }
             }
             .keyboardShortcut("r", modifiers: [.command])
+            .disabled(model.isScanning || model.isCleaning)
             
             Spacer()
             
@@ -231,7 +265,7 @@ struct MenuRootView: View {
                     Task { await model.cleanSelectedCategories() }
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(model.isCleaning)
+                .disabled(model.isCleaning || model.isScanning)
                 
                 Menu {
                     scheduleMenuItems
@@ -243,7 +277,7 @@ struct MenuRootView: View {
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
                 .buttonStyle(.borderedProminent)
-                .disabled(model.isCleaning)
+                .disabled(model.isCleaning || model.isScanning)
             }
         }
     }
@@ -264,6 +298,15 @@ struct MenuRootView: View {
         }
         .pickerStyle(.inline)
         .labelsHidden()
+
+        Divider()
+
+        Text("auto_clean.scope.note")
+            .font(.system(size: 11))
+            .foregroundStyle(.secondary)
+            .frame(width: 240, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .lineLimit(3)
     }
 
     private func setSchedule(_ schedule: AutoCleanSchedule) {
@@ -284,7 +327,7 @@ struct MenuRootView: View {
                         HStack {
                             Toggle(isOn: Binding(
                                 get: { model.selectedRuntimes[rt.deletionKey] ?? false },
-                                set: { model.selectedRuntimes[rt.deletionKey] = $0 }
+                                set: { model.setRuntimeSelection(rt.deletionKey, selected: $0) }
                             )) {
                                 Text(rt.version)
                             }
@@ -577,7 +620,7 @@ private extension MenuRootView {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Toggle(isOn: Binding(
                             get: { model.selectedArchives[archive.deletionKey] ?? false },
-                            set: { model.selectedArchives[archive.deletionKey] = $0 }
+                            set: { model.setArchiveSelection(archive.deletionKey, selected: $0) }
                         )) {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(archive.name)
@@ -726,7 +769,7 @@ private extension MenuRootView {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Toggle(isOn: Binding(
                             get: { model.selectedCleanableItems[item.deletionKey] ?? false },
-                            set: { model.selectedCleanableItems[item.deletionKey] = $0 }
+                            set: { model.setCleanableItemSelection(item.deletionKey, selected: $0) }
                         )) {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(item.name)
@@ -769,7 +812,7 @@ private extension MenuRootView {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Toggle(isOn: Binding(
                             get: { model.selectedUnavailableSimulators[device.deletionKey] ?? false },
-                            set: { model.selectedUnavailableSimulators[device.deletionKey] = $0 }
+                            set: { model.setUnavailableSimulatorSelection(device.deletionKey, selected: $0) }
                         )) {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(device.name)

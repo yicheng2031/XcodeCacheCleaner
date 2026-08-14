@@ -1,509 +1,252 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Xcode Cache Cleaner is a free open-source macOS menu bar utility for cleaning Xcode, Simulator, SwiftPM, archive, and device-support caches." />
-  <title>Xcode Cache Cleaner</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-      --bg: #f6f8fb;
-      --surface: #ffffff;
-      --surface-soft: #eef3f8;
-      --text: #17202a;
-      --muted: #5e6b78;
-      --line: rgba(23, 32, 42, .12);
-      --blue: #0077ff;
-      --green: #16845f;
-      --shadow: 0 22px 70px rgba(26, 39, 56, .16);
-      --radius: 8px;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #101416;
-        --surface: #171d20;
-        --surface-soft: #20282d;
-        --text: #f2f5f7;
-        --muted: #a4adb5;
-        --line: rgba(242, 245, 247, .13);
-        --shadow: 0 22px 70px rgba(0, 0, 0, .36);
-      }
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.55;
-    }
-
-    a { color: inherit; }
-
-    .wrap {
-      width: min(1120px, calc(100% - 40px));
-      margin: 0 auto;
-    }
-
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 4;
-      border-bottom: 1px solid var(--line);
-      background: color-mix(in srgb, var(--bg) 86%, transparent);
-      backdrop-filter: blur(18px);
-    }
-
-    nav {
-      min-height: 68px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-    }
-
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      font-weight: 800;
-    }
-
-    .brand img {
-      width: 38px;
-      height: 38px;
-      border-radius: 8px;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 650;
-    }
-
-    .nav-links a {
-      text-decoration: none;
-    }
-
-    .hero {
-      min-height: calc(100vh - 68px);
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
-      align-items: center;
-      gap: 64px;
-      padding: 60px 0 72px;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--green);
-      font-size: 14px;
-      font-weight: 800;
-      margin-bottom: 18px;
-    }
-
-    .eyebrow::before {
-      content: "";
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: var(--green);
-    }
-
-    h1 {
-      font-size: clamp(46px, 7vw, 82px);
-      line-height: .96;
-      letter-spacing: 0;
-      margin: 0 0 22px;
-      max-width: 820px;
-    }
-
-    .lead {
-      color: var(--muted);
-      font-size: 20px;
-      max-width: 700px;
-      margin: 0 0 12px;
-    }
-
-    .lead.zh {
-      font-size: 18px;
-      margin-bottom: 30px;
-    }
-
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 48px;
-      padding: 0 18px;
-      border-radius: var(--radius);
-      text-decoration: none;
-      font-weight: 800;
-      border: 1px solid var(--line);
-      background: var(--surface);
-    }
-
-    .button.primary {
-      background: var(--blue);
-      color: white;
-      border-color: var(--blue);
-    }
-
-    .meta {
-      margin-top: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .pill {
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 5px 10px;
-      background: color-mix(in srgb, var(--surface) 70%, transparent);
-    }
-
-    .product {
-      display: grid;
-      gap: 18px;
-    }
-
-    .app-icon {
-      width: 148px;
-      height: 148px;
-      border-radius: 32px;
-      box-shadow: var(--shadow);
-      justify-self: center;
-    }
-
-    .menu-preview {
-      border: 1px solid var(--line);
-      background: color-mix(in srgb, var(--surface) 92%, transparent);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      padding: 18px;
-    }
-
-    .preview-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--line);
-      font-weight: 800;
-    }
-
-    .preview-title {
-      margin: 16px 0 12px;
-      font-size: 18px;
-      font-weight: 800;
-    }
-
-    .rows {
-      display: grid;
-      gap: 12px;
-    }
-
-    .row {
-      display: grid;
-      grid-template-columns: 44px 1fr auto;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .toggle {
-      width: 44px;
-      height: 24px;
-      border-radius: 999px;
-      background: var(--blue);
-      position: relative;
-    }
-
-    .toggle::after {
-      content: "";
-      position: absolute;
-      right: 3px;
-      top: 3px;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #dcebff;
-    }
-
-    .row strong { display: block; }
-    .row span { color: var(--muted); font-size: 13px; }
-    .size { color: var(--muted); font-weight: 800; white-space: nowrap; }
-
-    section {
-      padding: 76px 0;
-      border-top: 1px solid var(--line);
-    }
-
-    h2 {
-      font-size: 34px;
-      line-height: 1.08;
-      margin: 0 0 16px;
-      letter-spacing: 0;
-    }
-
-    .section-lead {
-      max-width: 760px;
-      color: var(--muted);
-      font-size: 18px;
-      margin: 0 0 34px;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .feature {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 20px;
-    }
-
-    .feature h3 {
-      margin: 0 0 8px;
-      font-size: 18px;
-    }
-
-    .feature p {
-      margin: 0;
-      color: var(--muted);
-    }
-
-    .categories {
-      columns: 2;
-      column-gap: 46px;
-      padding: 0;
-      margin: 0;
-      list-style: none;
-    }
-
-    .categories li {
-      break-inside: avoid;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--line);
-      color: var(--muted);
-    }
-
-    .download-band {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-    }
-
-    .download-band p {
-      margin: 6px 0 0;
-      color: var(--muted);
-    }
-
-    footer {
-      border-top: 1px solid var(--line);
-      padding: 34px 0;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    footer .wrap {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    footer a { text-decoration: none; }
-
-    @media (max-width: 860px) {
-      .wrap { width: min(100% - 28px, 1120px); }
-      .nav-links { gap: 12px; font-size: 13px; }
-      .hero {
-        grid-template-columns: 1fr;
-        gap: 38px;
-        padding-top: 38px;
-      }
-      .product { max-width: 520px; }
-      .grid { grid-template-columns: 1fr; }
-      .categories { columns: 1; }
-      .download-band { align-items: flex-start; flex-direction: column; }
-    }
-
-    @media (max-width: 560px) {
-      .nav-links a:not(.button) { display: none; }
-      .brand span { display: none; }
-      .button { width: 100%; }
-      .actions .button { width: auto; }
-      h1 { font-size: 44px; }
-      .lead { font-size: 18px; }
-      .lead.zh { font-size: 16px; }
-      .preview-top { display: block; }
-      .row { grid-template-columns: 44px 1fr; }
-      .size { grid-column: 2; }
-    }
-  </style>
+  <meta name="description" content="A simple macOS menu bar utility for new iOS developers who need to free up space quietly used by Xcode." />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Xcode Cache Cleaner — Free up space used by Xcode</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" referrerpolicy="no-referrer" />
+  <link rel="icon" type="image/png" href="XcodeCacheCleaner/Assets.xcassets/AppIcon.appiconset/icon_32.png" />
+  <link rel="stylesheet" href="site.css" />
+  <script src="site.js" defer></script>
 </head>
-<body>
-  <header>
-    <nav class="wrap" aria-label="Main navigation">
-      <a class="brand" href="#">
-        <img src="XcodeCacheCleaner/Assets.xcassets/AppIcon.appiconset/icon_128.png" alt="Xcode Cache Cleaner icon" />
-        <span>Xcode Cache Cleaner</span>
+<body data-lang="zh">
+  <a class="skip-link" href="#main"><span class="lang-zh">跳到主要内容</span><span class="lang-en">Skip to content</span></a>
+
+  <header class="site-header">
+    <div class="wrap site-header-inner">
+      <a class="brand" href="index.html" aria-label="Xcode Cache Cleaner home">
+        <img src="XcodeCacheCleaner/Assets.xcassets/AppIcon.appiconset/icon_256.png" alt="" />
+        <span class="brand-name">Xcode Cache Cleaner</span>
       </a>
-      <div class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#cleanup">Cleanup</a>
-        <a href="https://github.com/yicheng2031/XcodeCacheCleaner">GitHub</a>
-        <a class="button primary" href="https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest">Download</a>
+
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#product"><span class="lang-zh">产品界面</span><span class="lang-en">Product</span></a>
+        <a href="#coverage"><span class="lang-zh">清理边界</span><span class="lang-en">Safety</span></a>
+        <a href="support.html"><span class="lang-zh">支持</span><span class="lang-en">Support</span></a>
+        <a href="privacy.html"><span class="lang-zh">隐私</span><span class="lang-en">Privacy</span></a>
+      </nav>
+
+      <details class="mobile-menu">
+        <summary>Menu / 菜单</summary>
+        <div class="mobile-menu-panel">
+          <a href="#product"><span class="lang-zh">产品界面</span><span class="lang-en">Product</span></a>
+          <a href="#coverage"><span class="lang-zh">清理边界</span><span class="lang-en">Safety</span></a>
+          <a href="support.html"><span class="lang-zh">支持</span><span class="lang-en">Support</span></a>
+          <a href="privacy.html"><span class="lang-zh">隐私</span><span class="lang-en">Privacy</span></a>
+        </div>
+      </details>
+
+      <div class="header-actions">
+        <button class="language-toggle" type="button" data-language-toggle aria-label="Switch site language to English">EN</button>
+        <a class="header-download" href="https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest" target="_blank" rel="noreferrer">
+          <span class="lang-zh">下载</span>
+          <span class="lang-en">Download</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9m0 0 3-3m-3 3-3-3M2.5 13.5h11" /></svg>
+        </a>
       </div>
-    </nav>
+    </div>
   </header>
 
-  <main>
-    <section class="hero wrap">
-      <div>
-        <div class="eyebrow">Free and open source for macOS</div>
-        <h1>Xcode Cache Cleaner</h1>
-        <p class="lead">Clean Xcode, Simulator, SwiftPM, archive, and device-support caches from a focused menu bar utility.</p>
-        <p class="lead zh">免费开源的 macOS 菜单栏工具，用于扫描和清理 Xcode、Simulator、SwiftPM、归档与真机调试缓存。</p>
-        <div class="actions">
-          <a class="button primary" href="https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest">Download DMG</a>
-          <a class="button" href="https://github.com/yicheng2031/XcodeCacheCleaner">View on GitHub</a>
+  <main id="main">
+    <section class="opening wrap" id="top">
+      <div class="opening-copy">
+        <h1>
+          <span class="lang-zh">刚开始做 iOS，磁盘却被 Xcode 悄悄占满了？</span>
+          <span class="lang-en">New to iOS development? Xcode may be quietly filling your disk.</span>
+        </h1>
+        <p class="opening-lede">
+          <span class="lang-zh">不用记命令，也不用手动翻目录。Xcode Cache Cleaner 是一个简单易用的 macOS 菜单栏工具，帮你找到 Xcode、Simulator 和 Runtime 占用的空间，选中后就能清理。</span>
+          <span class="lang-en">No commands to memorize and no folders to hunt down. Xcode Cache Cleaner is a simple macOS menu bar utility that shows what Xcode, Simulator, and Runtimes are using, so you can free up space in a few clicks.</span>
+        </p>
+        <div class="opening-actions">
+          <a class="button button-primary" href="https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest" target="_blank" rel="noreferrer">
+            <span class="lang-zh">下载 macOS 版本</span>
+            <span class="lang-en">Download for macOS</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9m0 0 3-3m-3 3-3-3M2.5 13.5h11" /></svg>
+          </a>
+          <a class="button button-secondary" href="https://github.com/yicheng2031/XcodeCacheCleaner" target="_blank" rel="noreferrer">
+            <span class="lang-zh">查看 GitHub</span>
+            <span class="lang-en">View on GitHub</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10" /></svg>
+          </a>
         </div>
-        <div class="meta" aria-label="Compatibility">
-          <span class="pill">macOS 13+</span>
-          <span class="pill">Intel + Apple Silicon</span>
-          <span class="pill">Universal 2</span>
-          <span class="pill">No analytics</span>
-        </div>
+        <p class="opening-facts">
+          <span><span class="lang-zh">适合 iOS 新手</span><span class="lang-en">Made for new iOS developers</span></span>
+          <span><span class="lang-zh">几步完成</span><span class="lang-en">Done in a few steps</span></span>
+          <span><span class="lang-zh">免费且开源</span><span class="lang-en">Free and open source</span></span>
+        </p>
       </div>
 
-      <div class="product" aria-label="Product preview">
-        <img class="app-icon" src="XcodeCacheCleaner/Assets.xcassets/AppIcon.appiconset/icon_256.png" alt="Xcode Cache Cleaner app icon" />
-        <div class="menu-preview">
-          <div class="preview-top">
-            <span>Xcode Cache 9.1 GB</span>
-            <span>Disk 65%</span>
-          </div>
-          <div class="preview-title">Xcode Cache Categories</div>
-          <div class="rows">
-            <div class="row">
-              <span class="toggle"></span>
-              <div><strong>DerivedData</strong><span>Build products and indexes</span></div>
-              <div class="size">210 MB</div>
+      <figure class="opening-evidence">
+        <div class="evidence-frame evidence-frame-overview">
+          <img src="docs/screenshots/menu-overview.png" alt="Xcode Cache Cleaner menu showing Xcode storage categories and sizes" fetchpriority="high" />
+        </div>
+        <figcaption>
+          <span class="lang-zh">打开菜单栏，Xcode 占了多少空间一目了然。</span>
+          <span class="lang-en">Open the menu bar utility and see where Xcode space is going.</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <section class="page-section evidence-section" id="product">
+      <div class="wrap">
+        <div class="section-intro section-intro-narrow">
+          <h2>
+            <span class="lang-zh">不用记目录，打开就能看懂。</span>
+            <span class="lang-en">No folders to memorize. Open it and get started.</span>
+          </h2>
+          <p>
+            <span class="lang-zh">Xcode 的缓存、模拟器数据和 Runtime 都按分类列好。即使刚开始做 iOS，也能知道哪些可以清理，哪些最好保留。</span>
+            <span class="lang-en">Xcode caches, Simulator data, and Runtimes are grouped for you. Even if you are new to iOS, it is easy to see what can go and what is better kept.</span>
+          </p>
+        </div>
+
+        <div class="product-evidence-grid">
+          <figure class="product-evidence">
+            <div class="evidence-frame evidence-frame-detail">
+              <img src="docs/screenshots/runtime-selection.png" alt="Xcode Cache Cleaner with the Runtime category expanded" loading="lazy" />
             </div>
-            <div class="row">
-              <span class="toggle"></span>
-              <div><strong>Simulator Runtimes</strong><span>iOS, watchOS, tvOS, visionOS</span></div>
-              <div class="size">8.8 GB</div>
+            <figcaption>
+              <strong><span class="lang-zh">需要清理什么，自己选</span><span class="lang-en">Choose what to clean</span></strong>
+              <span><span class="lang-zh">按分类选择，不用盲删。</span><span class="lang-en">Choose by category, with no blind cleanup.</span></span>
+            </figcaption>
+          </figure>
+
+          <div class="evidence-notes">
+            <div class="evidence-note">
+              <h3><span class="lang-zh">打开应用</span><span class="lang-en">Open the app</span></h3>
+              <p><span class="lang-zh">菜单栏里就能看到 Xcode 占用了多少空间。</span><span class="lang-en">See how much space Xcode is using from the menu bar.</span></p>
             </div>
-            <div class="row">
-              <span class="toggle"></span>
-              <div><strong>Archives</strong><span>Old Xcode archives</span></div>
-              <div class="size">1.4 GB</div>
+            <div class="evidence-note">
+              <h3><span class="lang-zh">扫描一下</span><span class="lang-en">Scan once</span></h3>
+              <p><span class="lang-zh">缓存、Simulator 和 Runtime 分开列好，想清理哪一类由你决定。</span><span class="lang-en">Caches, Simulator data, and Runtimes are grouped for you.</span></p>
             </div>
-            <div class="row">
-              <span class="toggle"></span>
-              <div><strong>SwiftPM Caches</strong><span>Dependency cache</span></div>
-              <div class="size">86 MB</div>
+            <div class="evidence-note">
+              <h3><span class="lang-zh">点击清理</span><span class="lang-en">Clean it up</span></h3>
+              <p><span class="lang-zh">点一下完成清理，之后重新扫描确认空间已经释放。</span><span class="lang-en">Click once to clean up, then scan again to confirm the space is free.</span></p>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section id="features">
+    <section class="page-section boundary-section" id="coverage">
       <div class="wrap">
-        <h2>Built for everyday Xcode cleanup</h2>
-        <p class="section-lead">The app keeps cleanup visible and selective. You can inspect categories, expand item lists, and remove only the data you actually want to clean.</p>
-        <div class="grid">
-          <article class="feature">
-            <h3>Selective by default</h3>
-            <p>Choose full categories or expand Runtimes, Archives, DerivedData, SwiftPM caches, logs, and unavailable simulators.</p>
-          </article>
-          <article class="feature">
-            <h3>Runtime aware</h3>
-            <p>Simulator Runtime cleanup uses stable runtime identifiers, so older iOS/watchOS/tvOS/visionOS runtimes can be removed reliably.</p>
-          </article>
-          <article class="feature">
-            <h3>Local and private</h3>
-            <p>No account, no tracking, no analytics, no cloud sync. Scanning and deletion run locally on your Mac.</p>
-          </article>
+        <div class="section-intro section-intro-narrow">
+          <h2>
+            <span class="lang-zh">新手也能放心清理。</span>
+            <span class="lang-en">A simple way to clean up.</span>
+          </h2>
+          <p>
+            <span class="lang-zh">缓存和日志可以交给定时清理；Runtime、归档和模拟器数据等重要内容，仍然由你手动决定。</span>
+            <span class="lang-en">Rebuildable caches can be scheduled; Runtimes, archives, and Simulator data stay in your hands.</span>
+          </p>
+        </div>
+
+        <div class="boundary-table-wrap">
+          <table>
+            <caption><span class="lang-zh">简单分清：哪些可以清理，哪些需要确认</span><span class="lang-en">A simple guide to what you can clean</span></caption>
+            <thead>
+              <tr>
+                <th scope="col"><span class="lang-zh">内容</span><span class="lang-en">Content</span></th>
+                <th scope="col"><span class="lang-zh">建议</span><span class="lang-en">What to do</span></th>
+                <th scope="col"><span class="lang-zh">说明</span><span class="lang-en">What to know</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><span class="lang-zh">可重建缓存和日志</span><span class="lang-en">Rebuildable caches and logs</span></th>
+                <td><span class="lang-zh">可以清理</span><span class="lang-en">Can be cleaned</span></td>
+                <td><span class="lang-zh">Xcode 需要时会自动重新生成。</span><span class="lang-en">Xcode rebuilds them when needed.</span></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="lang-zh">Runtime</span><span class="lang-en">Runtimes</span></th>
+                <td><span class="lang-zh">手动选择</span><span class="lang-en">Choose manually</span></td>
+                <td><span class="lang-zh">不再使用时再删除，之后可能需要重新下载。</span><span class="lang-en">Remove when you no longer need it; you may need to download it again.</span></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="lang-zh">归档与 DeviceSupport</span><span class="lang-en">Archives and DeviceSupport</span></th>
+                <td><span class="lang-zh">建议保留</span><span class="lang-en">Usually keep</span></td>
+                <td><span class="lang-zh">发布或真机调试时可能还会用到。</span><span class="lang-en">You may need them for releases or device debugging.</span></td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="lang-zh">模拟器设备数据</span><span class="lang-en">Simulator device data</span></th>
+                <td><span class="lang-zh">确认后清理</span><span class="lang-en">Confirm first</span></td>
+                <td><span class="lang-zh">里面可能有 App、用户数据和设备状态。</span><span class="lang-en">It may contain apps, user data, and device state.</span></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
 
-    <section id="cleanup">
-      <div class="wrap">
-        <h2>Cleanup coverage / 清理范围</h2>
-        <p class="section-lead">Common Xcode and Apple development cache locations are grouped into clear categories, with destructive items shown before cleanup.</p>
-        <ul class="categories">
-          <li>DerivedData / 编译产物与索引</li>
-          <li>Xcode Caches / Xcode 缓存</li>
-          <li>Simulator Logs and Caches / 模拟器日志与缓存</li>
-          <li>SwiftUI Previews / SwiftUI 预览数据</li>
-          <li>Simulator Devices / 模拟器设备数据</li>
-          <li>iOS DeviceSupport / 真机符号文件</li>
-          <li>Archives / Xcode 归档</li>
-          <li>Xcode Logs / Xcode 活动日志</li>
-          <li>SwiftPM Caches / SwiftPM 依赖缓存</li>
-          <li>Simulator Runtimes / 模拟器 Runtime</li>
-          <li>Unavailable Simulators / 不可用模拟器</li>
-          <li>Device Logs / 真机诊断日志</li>
-          <li>Xcode Products / Xcode 产品缓存</li>
-        </ul>
-      </div>
-    </section>
+    <section class="page-section schedule-section" id="schedule">
+      <div class="wrap schedule-layout">
+        <div class="schedule-copy">
+          <h2>
+            <span class="lang-zh">把清理变成一件小事。</span>
+            <span class="lang-en">Keep cleanup simple.</span>
+          </h2>
+          <p>
+            <span class="lang-zh">设置一次，让应用定期处理可重建的缓存和日志。Runtime 等内容仍然由你决定。</span>
+            <span class="lang-en">Set it once and let the app handle rebuildable caches and logs. You decide about Runtimes and other important data.</span>
+          </p>
+        </div>
 
-    <section id="download">
-      <div class="wrap">
-        <div class="download-band">
-          <div>
-            <h2>Download the Universal DMG</h2>
-            <p>Supports Intel and Apple Silicon Macs. Requires macOS 13 or later.</p>
-            <p>支持 Intel 与 Apple Silicon Mac，要求 macOS 13 或更高版本。</p>
+        <div class="schedule-demo">
+          <div class="schedule-options" role="group" aria-label="Scheduled cleanup interval">
+            <button type="button" data-schedule-option data-zh="当前选择：关闭定时清理" data-en="Selected: scheduled cleanup off" aria-pressed="true">
+              <span class="lang-zh">关闭</span><span class="lang-en">Off</span><small><span class="lang-zh">手动运行</span><span class="lang-en">Manual only</span></small>
+            </button>
+            <button type="button" data-schedule-option data-zh="当前选择：每 1 小时自动清理" data-en="Selected: every 1 hour" aria-pressed="false">
+              <span class="lang-zh">每 1 小时</span><span class="lang-en">Every hour</span><small>01:00</small>
+            </button>
+            <button type="button" data-schedule-option data-zh="当前选择：每 4 小时自动清理" data-en="Selected: every 4 hours" aria-pressed="false">
+              <span class="lang-zh">每 4 小时</span><span class="lang-en">Every 4 hours</span><small>04:00</small>
+            </button>
+            <button type="button" data-schedule-option data-zh="当前选择：每 12 小时自动清理" data-en="Selected: every 12 hours" aria-pressed="false">
+              <span class="lang-zh">每 12 小时</span><span class="lang-en">Every 12 hours</span><small>12:00</small>
+            </button>
+            <button type="button" data-schedule-option data-zh="当前选择：每 24 小时自动清理" data-en="Selected: every 24 hours" aria-pressed="false">
+              <span class="lang-zh">每 24 小时</span><span class="lang-en">Every 24 hours</span><small>24:00</small>
+            </button>
           </div>
-          <a class="button primary" href="https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest">Download Latest</a>
+          <p class="schedule-status" data-schedule-status aria-live="polite">当前选择：关闭定时清理</p>
         </div>
+      </div>
+    </section>
+
+    <section class="closing-band">
+      <div class="wrap closing-band-inner">
+        <div>
+          <h2><span class="lang-zh">少一点磁盘焦虑，多一点开发空间。</span><span class="lang-en">Less disk stress. More room to build.</span></h2>
+          <p><span class="lang-zh">免费开源，适合刚开始做 iOS 的你。</span><span class="lang-en">Free, open source, and made for new iOS developers.</span></p>
+        </div>
+        <a class="button button-inverse" href="https://github.com/yicheng2031/XcodeCacheCleaner/releases/latest" target="_blank" rel="noreferrer">
+          <span class="lang-zh">下载并开始使用</span>
+          <span class="lang-en">Download and get started</span>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 13 13 3m0 0H6m7 0v7" /></svg>
+        </a>
       </div>
     </section>
   </main>
 
-  <footer>
-    <div class="wrap">
-      <span>MIT License · Free open-source software</span>
-      <span>
-        <a href="privacy.html">Privacy</a> ·
-        <a href="support.html">Support</a> ·
-        <a href="https://github.com/yicheng2031/XcodeCacheCleaner/issues">Issues</a>
-      </span>
+  <footer class="site-footer">
+    <div class="wrap site-footer-inner">
+      <div class="footer-brand">
+        <strong>Xcode Cache Cleaner</strong>
+        <span><span class="lang-zh">免费开源的 macOS 菜单栏工具</span><span class="lang-en">Free and open-source macOS menu bar utility</span></span>
+      </div>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="#product"><span class="lang-zh">产品界面</span><span class="lang-en">Product</span></a>
+        <a href="support.html"><span class="lang-zh">支持</span><span class="lang-en">Support</span></a>
+        <a href="privacy.html"><span class="lang-zh">隐私</span><span class="lang-en">Privacy</span></a>
+        <a href="https://github.com/yicheng2031/XcodeCacheCleaner" target="_blank" rel="noreferrer">GitHub ↗</a>
+      </nav>
     </div>
   </footer>
 </body>

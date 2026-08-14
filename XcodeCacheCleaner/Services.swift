@@ -7,10 +7,38 @@
 
 import Foundation
 
+enum CleanupFailureStage {
+    case category
+    case runtime
+    case runtimeVerification
+    case archive
+    case item
+    case unavailableSimulator
+
+    var isRuntimeFailure: Bool {
+        switch self {
+        case .runtime, .runtimeVerification:
+            return true
+        case .category, .archive, .item, .unavailableSimulator:
+            return false
+        }
+    }
+}
+
+struct CleanupFailure {
+    let stage: CleanupFailureStage
+    let subject: String
+    let message: String
+
+    var displayMessage: String {
+        "\(subject): \(message)"
+    }
+}
+
 enum ServiceError: LocalizedError {
     case commandFailed(command: String, output: String)
     case invalidOutput(command: String, output: String)
-    case multipleFailures([String])
+    case multipleFailures([CleanupFailure])
 
     var errorDescription: String? {
         switch self {
@@ -18,8 +46,8 @@ enum ServiceError: LocalizedError {
             return String(format: String(localized: "error.command_failed.format"), command, output)
         case let .invalidOutput(command, output):
             return String(format: String(localized: "error.invalid_output.format"), command, output)
-        case let .multipleFailures(messages):
-            return messages.joined(separator: "\n")
+        case let .multipleFailures(failures):
+            return failures.map(\.displayMessage).joined(separator: "\n")
         }
     }
 }
@@ -317,6 +345,8 @@ final class ScannerService {
     func scan(preferences: Preferences) async throws -> ScanSnapshot {
         let disk = try diskInfo.readRootDisk()
 
+        var categoryErrors: [String: String] = [:]
+
         // Runtime 可能因为系统/权限策略失败：允许失败但不影响其他结果，但要把错误提示出来。
         var runtimeError: String?
         let runtimes: [String: [RuntimeItem]]
@@ -336,10 +366,20 @@ final class ScannerService {
             archiveError = (error as NSError).localizedDescription
         }
 
-        let itemListsByCategory = try await scanItemLists(for: preferences.categories)
-        let unavailableSimulators = try await scanUnavailableSimulators()
+        // 每个 item-list 分类独立降级；否则一个无权限目录会阻止所有
+        // 普通缓存参与自动清理。
+        let itemListResult = await scanItemLists(for: preferences.categories)
+        let itemListsByCategory = itemListResult.items
+        categoryErrors.merge(itemListResult.errors) { current, _ in current }
 
-        var categoryErrors: [String: String] = [:]
+        let unavailableSimulators: [SimulatorDeviceItem]
+        do {
+            unavailableSimulators = try await scanUnavailableSimulators()
+        } catch {
+            unavailableSimulators = []
+            categoryErrors["unavailableSimulators"] = (error as NSError).localizedDescription
+        }
+
         let categories = try await scanCategories(
             preferences.categories,
             runtimesByPlatform: runtimes,
@@ -521,12 +561,20 @@ final class ScannerService {
         return archiveURL.deletingPathExtension().lastPathComponent
     }
 
-    private func scanItemLists(for categories: [CacheCategoryPreference]) async throws -> [String: [CleanableItem]] {
+    private func scanItemLists(
+        for categories: [CacheCategoryPreference]
+    ) async -> (items: [String: [CleanableItem]], errors: [String: String]) {
         var result: [String: [CleanableItem]] = [:]
+        var errors: [String: String] = [:]
         for category in categories where category.action == .itemList {
-            result[category.id] = try await scanItems(for: category)
+            do {
+                result[category.id] = try await scanItems(for: category)
+            } catch {
+                result[category.id] = []
+                errors[category.id] = (error as NSError).localizedDescription
+            }
         }
-        return result
+        return (result, errors)
     }
 
     private func scanItems(for category: CacheCategoryPreference) async throws -> [CleanableItem] {
@@ -622,7 +670,7 @@ final class ScannerService {
                 let availabilityError = device["availabilityError"] as? String
                 guard !isAvailable || availabilityError != nil else { continue }
 
-                let udid = (device["udid"] as? String) ?? UUID().uuidString
+                guard let udid = device["udid"] as? String, !udid.isEmpty else { continue }
                 let dataPath = device["dataPath"] as? String
                 let bytes: Int64?
                 if let dataPath, FileManager.default.fileExists(atPath: dataPath) {
@@ -653,14 +701,20 @@ final class CleanerService {
     private let runner = ProcessRunner()
 
     func execute(plan: CleanerPlan) async throws {
-        var failures: [String] = []
+        var failures: [CleanupFailure] = []
 
         // 1) 清理目录类
         for cat in plan.categories {
             do {
                 try await executeCategory(cat)
             } catch {
-                failures.append("\(cat.id): \((error as NSError).localizedDescription)")
+                failures.append(
+                    CleanupFailure(
+                        stage: .category,
+                        subject: cat.id,
+                        message: (error as NSError).localizedDescription
+                    )
+                )
             }
         }
 
@@ -672,7 +726,13 @@ final class CleanerService {
                     _ = try await runner.runSimctl(["runtime", "delete", rt.deleteArgument])
                     submittedRuntimes.append(rt)
                 } catch {
-                    failures.append("\(rt.version): \((error as NSError).localizedDescription)")
+                    failures.append(
+                        CleanupFailure(
+                            stage: .runtime,
+                            subject: rt.version,
+                            message: (error as NSError).localizedDescription
+                        )
+                    )
                 }
             }
 
@@ -680,7 +740,13 @@ final class CleanerService {
                 do {
                     try await waitForRuntimeDeletion(submittedRuntimes)
                 } catch {
-                    failures.append("Runtime verification: \((error as NSError).localizedDescription)")
+                    failures.append(
+                        CleanupFailure(
+                            stage: .runtimeVerification,
+                            subject: "Runtime verification",
+                            message: (error as NSError).localizedDescription
+                        )
+                    )
                 }
             }
         }
@@ -691,7 +757,13 @@ final class CleanerService {
                 guard FileManager.default.fileExists(atPath: archive.path) else { continue }
                 try FileManager.default.removeItem(atPath: archive.path)
             } catch {
-                failures.append("\(archive.name): \((error as NSError).localizedDescription)")
+                failures.append(
+                    CleanupFailure(
+                        stage: .archive,
+                        subject: archive.name,
+                        message: (error as NSError).localizedDescription
+                    )
+                )
             }
         }
 
@@ -701,7 +773,13 @@ final class CleanerService {
                 guard FileManager.default.fileExists(atPath: item.path) else { continue }
                 try FileManager.default.removeItem(atPath: item.path)
             } catch {
-                failures.append("\(item.name): \((error as NSError).localizedDescription)")
+                failures.append(
+                    CleanupFailure(
+                        stage: .item,
+                        subject: item.name,
+                        message: (error as NSError).localizedDescription
+                    )
+                )
             }
         }
 
@@ -710,7 +788,13 @@ final class CleanerService {
             do {
                 _ = try await runner.runSimctl(["delete", device.id])
             } catch {
-                failures.append("\(device.name): \((error as NSError).localizedDescription)")
+                failures.append(
+                    CleanupFailure(
+                        stage: .unavailableSimulator,
+                        subject: device.name,
+                        message: (error as NSError).localizedDescription
+                    )
+                )
             }
         }
 

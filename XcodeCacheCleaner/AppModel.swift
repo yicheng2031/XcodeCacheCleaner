@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import AppKit
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -30,29 +31,66 @@ final class AppModel: ObservableObject {
     // 清理完成提示（显示 3 秒）
     @Published var cleanToastMessage: String?
 
+    // 定时清理状态：用于显示“下次执行”以及跨重启保留失败原因。
+    @Published private(set) var nextAutoCleanAt: Date?
+    @Published private(set) var lastAutoCleanAt: Date?
+    @Published private(set) var lastAutoCleanError: String?
+    @Published private(set) var autoCleanLoginItemError: String?
+
     private let snapshotStore = SnapshotStore()
     private let preferencesStore = PreferencesStore()
+    private let autoCleanStore = AutoCleanStore()
+    private let selectionStore = SelectionStore()
+    private let launchAtLoginService = LaunchAtLoginService()
     private let scanner = ScannerService()
     private let cleaner = CleanerService()
 
+    private var autoCleanState: AutoCleanState = .empty
     private var timer: Timer?
     private var autoCleanTimer: Timer?
+    private var wakeObserver: NSObjectProtocol?
 
     init() {
         self.preferences = preferencesStore.load()
         self.snapshot = snapshotStore.load()
 
+        let selectionState = selectionStore.load()
+        self.selectedRuntimes = selectionState.runtimes
+        self.selectedArchives = selectionState.archives
+        self.selectedCleanableItems = selectionState.cleanableItems
+        self.selectedUnavailableSimulators = selectionState.unavailableSimulators
+
+        let autoCleanState = autoCleanStore.load()
+        self.autoCleanState = autoCleanState
+        self.nextAutoCleanAt = autoCleanState.nextRunAt
+        self.lastAutoCleanAt = autoCleanState.lastRunAt
+        self.lastAutoCleanError = autoCleanState.lastErrorMessage
+
         // 启动定时扫描（30 分钟一次）
         startTimer()
-        startAutoCleanTimer()
+        wakeObserver = NotificationCenter.default.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { await self.runScheduledAutoClean() }
+        }
 
         // 冷启动：如果没有快照，启动一次后台扫描；否则先展示快照，后台再刷新。
-        Task { await refresh(reason: "launch") }
+        Task { [weak self] in
+            guard let self else { return }
+            _ = await self.refresh(reason: "launch")
+            self.startAutoCleanTimer()
+        }
     }
 
     deinit {
         timer?.invalidate()
         autoCleanTimer?.invalidate()
+        if let wakeObserver {
+            NotificationCenter.default.removeObserver(wakeObserver)
+        }
     }
 
     func startTimer() {
@@ -65,15 +103,30 @@ final class AppModel: ObservableObject {
 
     func startAutoCleanTimer() {
         autoCleanTimer?.invalidate()
-        guard let interval = preferences.autoCleanSchedule.intervalSeconds else { return }
+        autoCleanTimer = nil
 
-        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            Task { await self.cleanSelectedCategories() }
+        let schedule = preferences.autoCleanSchedule
+        guard let interval = schedule.intervalSeconds else {
+            autoCleanState.schedule = .off
+            autoCleanState.nextRunAt = nil
+            persistAutoCleanState()
+            syncLaunchAtLogin(enabled: false)
+            return
         }
-        timer.tolerance = min(interval * 0.1, 60)
-        RunLoop.main.add(timer, forMode: .common)
-        autoCleanTimer = timer
+
+        // Changing the interval starts a new wall-clock period. Otherwise a
+        // restart keeps the previous due date and can catch up an overdue run.
+        if autoCleanState.schedule != schedule || autoCleanState.nextRunAt == nil {
+            autoCleanState.schedule = schedule
+            autoCleanState.nextRunAt = Date().addingTimeInterval(interval)
+            autoCleanState.lastErrorMessage = nil
+            persistAutoCleanState()
+        } else {
+            publishAutoCleanState()
+        }
+
+        syncLaunchAtLogin(enabled: true)
+        scheduleNextAutoCleanTimer()
     }
 
     func updatePreferences(_ newValue: Preferences) {
@@ -83,8 +136,142 @@ final class AppModel: ObservableObject {
         startAutoCleanTimer()
     }
 
-    func refresh(reason: String) async {
-        guard !isScanning else { return }
+    private func scheduleNextAutoCleanTimer() {
+        autoCleanTimer?.invalidate()
+        autoCleanTimer = nil
+
+        guard let nextRunAt = autoCleanState.nextRunAt,
+              preferences.autoCleanSchedule.intervalSeconds != nil else { return }
+
+        let delay = max(0.1, nextRunAt.timeIntervalSinceNow)
+        let timer = Timer(timeInterval: delay, repeats: false) { [weak self] _ in
+            guard let self else { return }
+            Task { await self.runScheduledAutoClean() }
+        }
+        timer.tolerance = min(max(delay * 0.1, 1), 60)
+        RunLoop.main.add(timer, forMode: .common)
+        autoCleanTimer = timer
+    }
+
+    private func runScheduledAutoClean() async {
+        guard preferences.autoCleanSchedule.intervalSeconds != nil else {
+            startAutoCleanTimer()
+            return
+        }
+
+        let now = Date()
+        if let nextRunAt = autoCleanState.nextRunAt, nextRunAt > now {
+            scheduleNextAutoCleanTimer()
+            return
+        }
+
+        // Never clean a stale snapshot and never overlap a manual scan/clean.
+        // Retry shortly instead of silently skipping this scheduled run.
+        guard !isScanning, !isCleaning else {
+            autoCleanState.nextRunAt = now.addingTimeInterval(60)
+            persistAutoCleanState()
+            scheduleNextAutoCleanTimer()
+            return
+        }
+
+        let didRefresh = await refresh(reason: "auto-clean")
+        guard didRefresh else {
+            finishScheduledRun(
+                success: false,
+                errorMessage: lastErrorMessage ?? String(localized: "auto_clean.error.scan_failed")
+            )
+            return
+        }
+
+        let success = await performClean(automaticOnly: true)
+        finishScheduledRun(
+            success: success,
+            errorMessage: success ? nil : lastErrorMessage ?? String(localized: "auto_clean.error.clean_failed")
+        )
+    }
+
+    private func finishScheduledRun(success: Bool, errorMessage: String?) {
+        guard let interval = preferences.autoCleanSchedule.intervalSeconds else {
+            startAutoCleanTimer()
+            return
+        }
+
+        autoCleanState.schedule = preferences.autoCleanSchedule
+        autoCleanState.lastRunAt = Date()
+        autoCleanState.lastErrorMessage = success ? nil : errorMessage
+        autoCleanState.nextRunAt = Date().addingTimeInterval(interval)
+        persistAutoCleanState()
+        scheduleNextAutoCleanTimer()
+    }
+
+    private func persistAutoCleanState() {
+        autoCleanStore.save(autoCleanState)
+        publishAutoCleanState()
+    }
+
+    private func publishAutoCleanState() {
+        nextAutoCleanAt = autoCleanState.nextRunAt
+        lastAutoCleanAt = autoCleanState.lastRunAt
+        lastAutoCleanError = autoCleanState.lastErrorMessage
+    }
+
+    private func syncLaunchAtLogin(enabled: Bool) {
+        do {
+            try launchAtLoginService.setEnabled(enabled)
+            autoCleanLoginItemError = nil
+        } catch {
+            autoCleanLoginItemError = (error as NSError).localizedDescription
+        }
+    }
+
+    func setRuntimeSelection(_ key: String, selected: Bool) {
+        selectedRuntimes[key] = selected
+        persistSelections()
+    }
+
+    func setArchiveSelection(_ key: String, selected: Bool) {
+        selectedArchives[key] = selected
+        persistSelections()
+    }
+
+    func setCleanableItemSelection(_ key: String, selected: Bool) {
+        selectedCleanableItems[key] = selected
+        persistSelections()
+    }
+
+    func setUnavailableSimulatorSelection(_ key: String, selected: Bool) {
+        selectedUnavailableSimulators[key] = selected
+        persistSelections()
+    }
+
+    private func persistSelections() {
+        selectionStore.save(
+            SelectionState(
+                runtimes: selectedRuntimes,
+                archives: selectedArchives,
+                cleanableItems: selectedCleanableItems,
+                unavailableSimulators: selectedUnavailableSimulators
+            )
+        )
+    }
+
+    @discardableResult
+    func refresh(reason: String) async -> Bool {
+        // Opening a menu bar popover can recreate the view repeatedly. Avoid
+        // launching a full `du`/simctl scan for every open when the snapshot
+        // is still recent.
+        if reason == "menu-open",
+           let snapshot,
+           Date().timeIntervalSince(snapshot.createdAt) < 30 {
+            return true
+        }
+
+        // The post-clean refresh is intentionally allowed below while the
+        // cleaner owns the operation; unrelated scans must wait instead.
+        if isCleaning, reason != "after-clean" {
+            return false
+        }
+        guard !isScanning else { return false }
         isScanning = true
         lastErrorMessage = nil
         defer { isScanning = false }
@@ -111,29 +298,44 @@ final class AppModel: ObservableObject {
                 from: newSnapshot.unavailableSimulators ?? [],
                 preserving: selectedUnavailableSimulators
             )
+            persistSelections()
+            return true
         } catch {
             lastErrorMessage = (error as NSError).localizedDescription
+            return false
         }
     }
 
     func cleanSelectedCategories() async {
-        guard !isCleaning else { return }
+        guard !isCleaning, !isScanning else { return }
+
+        // A manual clean from a cold start must use the newly scanned data in
+        // the same invocation instead of returning after refresh.
+        if snapshot == nil {
+            guard await refresh(reason: "before-clean-no-snapshot") else { return }
+        }
+
+        _ = await performClean(automaticOnly: false)
+    }
+
+    @discardableResult
+    private func performClean(automaticOnly: Bool) async -> Bool {
+        guard !isCleaning else { return false }
         isCleaning = true
         lastErrorMessage = nil
         runtimeDeleteMessage = nil
         runtimeFallbackCommands = []
         defer { isCleaning = false }
 
-        guard let snapshot else {
-            await refresh(reason: "before-clean-no-snapshot")
-            return
-        }
+        guard let snapshot else { return false }
 
         // “一键清理”策略：
         // - 所有分类都扫描（已实现）
         // - 只有开关打开的分类参与删除
         // - Runtime / Archives：使用展开勾选的子列表作为删除目标
-        let enabledCategories = preferences.categories.filter { $0.includedInOneTapClean }
+        let enabledCategories = preferences.categories.filter {
+            $0.includedInOneTapClean && (!automaticOnly || $0.allowsAutomaticClean)
+        }
         let categoriesToClean = enabledCategories.filter {
             $0.action != .runtimes
                 && $0.action != .archives
@@ -176,6 +378,8 @@ final class AppModel: ObservableObject {
             simulatorDevicesToDelete: simulatorDevicesToDelete
         )
 
+        var cleanErrorMessage: String?
+        var visibleCleanupErrorMessage: String?
         do {
             let plan = CleanerPlan(
                 categories: categoriesToClean,
@@ -190,11 +394,26 @@ final class AppModel: ObservableObject {
                 showCleanToast(bytes: estimatedBytes)
             }
         } catch {
-            // 允许“部分成功”：即便 Runtime 删除失败，也可能已经清掉了其它目录。
-            if !runtimesToDelete.isEmpty {
+            cleanErrorMessage = (error as NSError).localizedDescription
+            let failures: [CleanupFailure]
+            if case let ServiceError.multipleFailures(records) = error {
+                failures = records
+            } else {
+                failures = []
+            }
+
+            let runtimeFailures = failures.filter { $0.stage.isRuntimeFailure }
+            let otherFailures = failures.filter { !$0.stage.isRuntimeFailure }
+
+            // 允许“部分成功”：Runtime 与其它分类分别展示，避免把
+            // simulatorDevices 的 simctl 失败误报成 Runtime 删除失败。
+            if !runtimeFailures.isEmpty {
+                let runtimeMessage = runtimeFailures
+                    .map(\.displayMessage)
+                    .joined(separator: "\n")
                 runtimeDeleteMessage = String(
                     format: String(localized: "runtime.delete_failed.format"),
-                    (error as NSError).localizedDescription
+                    runtimeMessage
                 )
                 runtimeFallbackCommands = [
                     "SIMCTL=\"$(xcrun --find simctl 2>/dev/null || printf '%s' '/Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/Resources/bin/simctl')\""
@@ -203,12 +422,24 @@ final class AppModel: ObservableObject {
                     "mount | grep CoreSimulator || true",
                     "diskutil list | grep -i -C 2 simulator || true"
                 ]
-            } else {
-                lastErrorMessage = (error as NSError).localizedDescription
+            }
+
+            if !otherFailures.isEmpty {
+                visibleCleanupErrorMessage = otherFailures
+                    .map(\.displayMessage)
+                    .joined(separator: "\n")
+            } else if runtimeFailures.isEmpty {
+                visibleCleanupErrorMessage = cleanErrorMessage
             }
         }
 
         await refresh(reason: "after-clean")
+        // refresh() clears the transient error at the beginning. Restore the
+        // cleanup error so a failed scheduled run remains visible.
+        if let visibleCleanupErrorMessage {
+            lastErrorMessage = visibleCleanupErrorMessage
+        }
+        return cleanErrorMessage == nil
     }
 
     private func showCleanToast(bytes: Int64) {
